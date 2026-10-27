@@ -42,8 +42,14 @@ export class ClienteFormComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.catalogoService.obtenerTiposIdentificacion().subscribe((data) => this.tiposIdentificacion.set(data));
-    this.catalogoService.obtenerEstados().subscribe((data) => this.estados.set(data));
+    this.catalogoService.obtenerTiposIdentificacion().subscribe({
+      next: (data) => this.tiposIdentificacion.set(data),
+      error: (err) => this.mensaje.set(err.error?.detail ?? 'No se pudieron cargar los tipos de identificación.'),
+    });
+    this.catalogoService.obtenerEstados().subscribe({
+      next: (data) => this.estados.set(data),
+      error: (err) => this.mensaje.set(err.error?.detail ?? 'No se pudieron cargar los estados.'),
+    });
 
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {

@@ -8,6 +8,7 @@ import org.springframework.core.NestedExceptionUtils;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -24,6 +25,11 @@ public class GlobalExceptionHandler {
         }
         return ResponseEntity.badRequest()
                 .body(new ErrorResponseDTO(400, "Los datos enviados no son válidos.", errores));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponseDTO> handleBodyIlegible(HttpMessageNotReadableException exception) {
+        return response(HttpStatus.BAD_REQUEST, "El cuerpo de la petición no es un JSON válido.");
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)
