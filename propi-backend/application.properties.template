@@ -1,0 +1,15 @@
+spring.application.name=propi
+server.port=8080
+
+# Conexion a SQL Server (copiar a src/main/resources/application.properties y completar la contrasena)
+spring.datasource.url=jdbc:sqlserver://163.178.173.130;databaseName=PropiFacturacion_AAMM;encrypt=true;trustServerCertificate=true;
+spring.datasource.username=Lenguajes
+spring.datasource.password=CAMBIAR_PASSWORD
+spring.datasource.driver-class-name=com.microsoft.sqlserver.jdbc.SQLServerDriver
+
+# El esquema lo crean los scripts de la carpeta database/, Hibernate no toca las tablas
+spring.jpa.hibernate.ddl-auto=none
+spring.jpa.hibernate.naming.physical-strategy=org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+spring.jpa.show-sql=true
+spring.jpa.database-platform=org.hibernate.dialect.SQLServerDialect
+spring.jpa.open-in-view=false
