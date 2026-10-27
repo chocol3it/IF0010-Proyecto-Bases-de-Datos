@@ -1,0 +1,5 @@
+/* Estilos base mínimos; el diseño final se aplicará con la guía de diseño */
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+}

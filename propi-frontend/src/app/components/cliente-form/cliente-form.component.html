@@ -1,0 +1,85 @@
+<h2>{{ codCliente ? 'Editar cliente' : 'Nuevo cliente' }}</h2>
+
+<p class="error" *ngIf="mensaje()">{{ mensaje() }}</p>
+
+<form [formGroup]="form" (ngSubmit)="guardar()">
+  <label>
+    Nombre
+    <input type="text" formControlName="nomCliente" />
+  </label>
+  <p class="error" *ngIf="invalido('nomCliente')">El nombre es obligatorio.</p>
+
+  <label>
+    Tipo de identificación
+    <select formControlName="codTipoIdentificacion">
+      <option [ngValue]="0" disabled>Seleccione...</option>
+      <option *ngFor="let tipo of tiposIdentificacion()" [ngValue]="tipo.codTipoIdentificacion">
+        {{ tipo.desTipoIdentificacion }}
+      </option>
+    </select>
+  </label>
+  <p class="error" *ngIf="invalido('codTipoIdentificacion')">Seleccione un tipo de identificación.</p>
+
+  <label>
+    Número de identificación
+    <input type="text" formControlName="numIdentificacion" />
+  </label>
+  <p class="error" *ngIf="invalido('numIdentificacion')">La identificación es obligatoria.</p>
+
+  <fieldset>
+    <legend>Domicilio</legend>
+    <label>
+      Provincia
+      <input type="text" formControlName="desProvincia" />
+    </label>
+    <label>
+      Cantón
+      <input type="text" formControlName="desCanton" />
+    </label>
+    <label>
+      Distrito
+      <input type="text" formControlName="desDistrito" />
+    </label>
+    <label>
+      Barrio
+      <input type="text" formControlName="desBarrio" />
+    </label>
+    <p class="error" *ngIf="invalido('desProvincia') || invalido('desCanton') || invalido('desDistrito')">
+      Provincia, cantón y distrito son obligatorios.
+    </p>
+  </fieldset>
+
+  <label>
+    Profesión u oficio
+    <input type="text" formControlName="desProfesion" />
+  </label>
+
+  <label>
+    Actividad económica
+    <input type="text" formControlName="desActividadEconomica" />
+  </label>
+
+  <label>
+    Correo electrónico
+    <input type="email" formControlName="desCorreo" />
+  </label>
+  <p class="error" *ngIf="invalido('desCorreo')">Ingrese un correo válido.</p>
+
+  <label>
+    Teléfono
+    <input type="text" formControlName="numTelefono" />
+  </label>
+  <p class="error" *ngIf="invalido('numTelefono')">El teléfono es obligatorio.</p>
+
+  <label>
+    Estado
+    <select formControlName="codEstado">
+      <option *ngFor="let estado of estados()" [ngValue]="estado.codEstado">{{ estado.desEstado }}</option>
+    </select>
+  </label>
+
+  <div class="acciones">
+    <button type="submit" [disabled]="guardando()">Guardar</button>
+    <a routerLink="/clientes">Cancelar</a>
+  </div>
+</form>
