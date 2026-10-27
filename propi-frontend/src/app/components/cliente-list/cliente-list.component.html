@@ -1,0 +1,37 @@
+<h2>Clientes</h2>
+
+<a routerLink="/clientes/nuevo">+ Nuevo cliente</a>
+
+<p class="mensaje" *ngIf="mensaje()">{{ mensaje() }}</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Nombre</th>
+      <th>Identificación</th>
+      <th>Actividad económica</th>
+      <th>Correo</th>
+      <th>Teléfono</th>
+      <th>Registro</th>
+      <th>Estado</th>
+      <th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let cliente of clientes()">
+      <td>{{ cliente.nomCliente }}</td>
+      <td>{{ cliente.numIdentificacion }}</td>
+      <td>{{ cliente.desActividadEconomica }}</td>
+      <td>{{ cliente.desCorreo }}</td>
+      <td>{{ cliente.numTelefono }}</td>
+      <td>{{ cliente.fecRegistro | date: 'dd/MM/yyyy' }}</td>
+      <td>{{ cliente.codEstado === 'A' ? 'Activo' : 'Inactivo' }}</td>
+      <td>
+        <a [routerLink]="['/clientes', cliente.codCliente, 'editar']">Editar</a>
+        <button type="button" (click)="eliminar(cliente)">Eliminar</button>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<p *ngIf="clientes().length === 0">No hay clientes registrados.</p>
