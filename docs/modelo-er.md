@@ -1,9 +1,29 @@
 # Modelo entidad-relación (REQ 001)
 
-Base de datos `PropiFacturacion_AAMM`. GitHub dibuja el diagrama automáticamente;
-también se puede pegar en [mermaid.live](https://mermaid.live) para exportarlo como imagen.
+Base de datos `PropiFacturacion_AAMM`, esquema `facturacion`. Notación de Chen.
 
-## Esquema `facturacion`
+![Modelo entidad-relación en notación de Chen](modelo-er-chen.png)
+
+| Símbolo | Significado |
+|---|---|
+| Rectángulo | Entidad |
+| Rombo | Relación, con su cardinalidad (1 / N) |
+| Óvalo | Atributo |
+| Óvalo con texto subrayado | Atributo identificador (llave primaria) |
+| Óvalo punteado | Atributo derivado (lo calcula el procedimiento almacenado) |
+| Óvalo con óvalos hijos | Atributo compuesto (`domicilio`) |
+
+Las llaves foráneas no se dibujan como atributos: las representan las relaciones.
+Las bitácoras del esquema `auditoria` no se relacionan con otras entidades, por eso
+solo aparecen en el grafo relacional.
+
+El diagrama se genera desde `modelo-er-chen.dot` con Graphviz:
+`neato -Tpng modelo-er-chen.dot -o modelo-er-chen.png` (también hay versión `.svg`).
+
+## Grafo relacional
+
+Todas las tablas de la base de datos con sus columnas, llaves y relaciones. Las bitácoras (`bitacora_acceso`, `bitacora_auditoria`) no tienen relaciones con otras tablas.
+GitHub dibuja el diagrama automáticamente; para exportarlo como imagen se puede pegar en [mermaid.live](https://mermaid.live).
 
 ```mermaid
 erDiagram
@@ -113,14 +133,6 @@ erDiagram
         INT cod_tipo_nota PK
         VARCHAR des_tipo_nota
     }
-```
-
-## Esquema `auditoria` (filegroup `FG_AUDITORIA`)
-
-Tablas sin relaciones: guardan registros de todas las demás.
-
-```mermaid
-erDiagram
     bitacora_acceso {
         INT cod_acceso PK
         VARCHAR nom_usuario
@@ -142,7 +154,7 @@ erDiagram
     }
 ```
 
-## Grafo relacional
+### Detalle de tablas
 
 Notación: `PK` llave primaria, `→ tabla` llave foránea.
 
