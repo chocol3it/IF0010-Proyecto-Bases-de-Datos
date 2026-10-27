@@ -34,3 +34,6 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Credenciales locales (copia en la raíz del backend) ###
+/application.properties
