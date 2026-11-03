@@ -1,0 +1,64 @@
+<h2>Reportes</h2>
+
+<form [formGroup]="form" (ngSubmit)="generar()">
+  <label>
+    Reporte
+    <select formControlName="tipo">
+      <option value="clientes">Clientes resumido</option>
+      <option value="facturas">Facturas</option>
+      <option value="auditoria">Pistas de auditoría</option>
+      <option value="seguridad">Configuración de seguridad</option>
+    </select>
+  </label>
+
+  <div class="linea" *ngIf="form.controls.tipo.value !== 'seguridad'">
+    <label>
+      Fecha desde
+      <input type="date" formControlName="desde" />
+    </label>
+    <label>
+      Fecha hasta
+      <input type="date" formControlName="hasta" />
+    </label>
+  </div>
+
+  <label *ngIf="form.controls.tipo.value === 'clientes'">
+    Estado
+    <select formControlName="estado">
+      <option value="">Todos</option>
+      <option value="A">Activos</option>
+      <option value="I">Inactivos</option>
+    </select>
+  </label>
+
+  <label *ngIf="form.controls.tipo.value === 'auditoria' || form.controls.tipo.value === 'seguridad'">
+    Usuario (vacío = todos)
+    <input type="text" formControlName="usuario" placeholder="propi_digitador" />
+  </label>
+
+  <button type="submit">Generar</button>
+</form>
+
+<p class="error" *ngIf="mensaje()">{{ mensaje() }}</p>
+
+<table *ngIf="filas().length > 0">
+  <thead>
+    <tr>
+      <th *ngFor="let columna of columnas()">{{ titulos[columna] ?? columna }}</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let fila of filas()">
+      <td *ngFor="let columna of columnas()">
+        <ng-container [ngSwitch]="columna.substring(0, 4)">
+          <span *ngSwitchCase="'fec_'">{{ $any(fila[columna]) | date: 'dd/MM/yyyy HH:mm' }}</span>
+          <span *ngSwitchCase="'mon_'">{{ $any(fila[columna]) | number: '1.2-2' }}</span>
+          <code *ngSwitchCase="'des_'">{{ fila[columna] }}</code>
+          <span *ngSwitchDefault>{{ fila[columna] }}</span>
+        </ng-container>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<p *ngIf="filas().length > 0">{{ filas().length }} registros.</p>
