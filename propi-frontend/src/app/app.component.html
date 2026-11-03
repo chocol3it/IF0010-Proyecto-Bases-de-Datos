@@ -1,8 +1,22 @@
 <header class="navbar">
-  <span class="navbar-brand">{{ title() }}</span>
-  <nav>
-    <a routerLink="/clientes" routerLinkActive="active">Clientes</a>
-  </nav>
+  <span class="navbar-brand">Propi Facturación</span>
+
+  <!-- El menú muestra solo los módulos del rol (REQ 004) -->
+  <ng-container *ngIf="authService.usuario()">
+    <nav>
+      <a routerLink="/inicio" routerLinkActive="active">Inicio</a>
+      <a *ngIf="authService.tieneRol('ADMINISTRADOR', 'DIGITADOR')" routerLink="/clientes" routerLinkActive="active">Clientes</a>
+      <a *ngIf="authService.tieneRol('ADMINISTRADOR')" routerLink="/tipos-impuesto" routerLinkActive="active">Impuestos</a>
+      <a *ngIf="authService.tieneRol('ADMINISTRADOR')" routerLink="/productos" routerLinkActive="active">Productos</a>
+      <a *ngIf="authService.tieneRol('ADMINISTRADOR', 'DIGITADOR')" routerLink="/facturas" routerLinkActive="active">Facturas</a>
+      <a *ngIf="authService.tieneRol('ADMINISTRADOR', 'DIGITADOR')" routerLink="/notas" routerLinkActive="active">Notas</a>
+      <a *ngIf="authService.tieneRol('ADMINISTRADOR', 'CONSULTA')" routerLink="/reportes" routerLinkActive="active">Reportes</a>
+    </nav>
+    <span>
+      {{ authService.usuario() }} ({{ authService.rol() }})
+      <button type="button" (click)="authService.logout()">Salir</button>
+    </span>
+  </ng-container>
 </header>
 
 <main>

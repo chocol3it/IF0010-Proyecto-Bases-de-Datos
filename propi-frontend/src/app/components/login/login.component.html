@@ -1,0 +1,15 @@
+<h2>Iniciar sesión</h2>
+
+<p class="error" *ngIf="mensaje()">{{ mensaje() }}</p>
+
+<form [formGroup]="form" (ngSubmit)="ingresar()">
+  <label>
+    Usuario
+    <input type="text" formControlName="usuario" autocomplete="username" />
+  </label>
+  <label>
+    Contraseña
+    <input type="password" formControlName="contrasena" autocomplete="current-password" />
+  </label>
+  <button type="submit" [disabled]="ingresando()">Ingresar</button>
+</form>
