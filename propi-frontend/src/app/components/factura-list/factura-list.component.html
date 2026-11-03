@@ -1,0 +1,38 @@
+<h2>Facturas</h2>
+
+<a routerLink="/facturas/nueva">+ Nueva factura</a>
+
+<p class="error" *ngIf="mensaje()">{{ mensaje() }}</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>N.º</th>
+      <th>Fecha</th>
+      <th>Cliente</th>
+      <th>Condición</th>
+      <th>Medio de pago</th>
+      <th>Moneda</th>
+      <th>Subtotal</th>
+      <th>Impuestos</th>
+      <th>Total</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let factura of facturas()">
+      <td>{{ factura.codFactura }}</td>
+      <td>{{ factura.fecFactura | date: 'dd/MM/yyyy HH:mm' }}</td>
+      <td>{{ factura.nomCliente }}</td>
+      <td>{{ factura.desCondicionVenta }}</td>
+      <td>{{ factura.desMedioPago }}</td>
+      <td>{{ factura.codIso }}</td>
+      <td>{{ factura.monSubtotal | number: '1.2-2' }}</td>
+      <td>{{ factura.monTotalImpuestos | number: '1.2-2' }}</td>
+      <td>{{ factura.monTotal | number: '1.2-2' }}</td>
+      <td><a [routerLink]="['/facturas', factura.codFactura]">Ver</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<p *ngIf="facturas().length === 0">No hay facturas registradas.</p>

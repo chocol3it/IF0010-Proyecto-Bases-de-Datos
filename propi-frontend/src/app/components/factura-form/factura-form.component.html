@@ -1,0 +1,78 @@
+<h2>Nueva factura</h2>
+
+<p class="error" *ngIf="mensaje()">{{ mensaje() }}</p>
+
+<form [formGroup]="form" (ngSubmit)="guardar()">
+  <label>
+    Cliente
+    <select formControlName="codCliente">
+      <option [ngValue]="0" disabled>Seleccione...</option>
+      <option *ngFor="let cliente of clientes()" [ngValue]="cliente.codCliente">
+        {{ cliente.nomCliente }} ({{ cliente.numIdentificacion }})
+      </option>
+    </select>
+  </label>
+
+  <label>
+    Condición de venta
+    <select formControlName="codCondicionVenta">
+      <option [ngValue]="0" disabled>Seleccione...</option>
+      <option *ngFor="let item of condiciones()" [ngValue]="item.codigo">{{ item.descripcion }}</option>
+    </select>
+  </label>
+
+  <label>
+    Medio de pago
+    <select formControlName="codMedioPago">
+      <option [ngValue]="0" disabled>Seleccione...</option>
+      <option *ngFor="let item of mediosPago()" [ngValue]="item.codigo">{{ item.descripcion }}</option>
+    </select>
+  </label>
+
+  <div class="linea">
+    <label>
+      Moneda
+      <select formControlName="codMoneda">
+        <option [ngValue]="0" disabled>Seleccione...</option>
+        <option *ngFor="let item of monedas()" [ngValue]="item.codigo">{{ item.descripcion }}</option>
+      </select>
+    </label>
+    <label>
+      Tipo de cambio
+      <input type="number" step="0.0001" formControlName="monTipoCambio" />
+    </label>
+  </div>
+
+  <label>
+    Observaciones
+    <textarea formControlName="desObservaciones" rows="2"></textarea>
+  </label>
+
+  <h3>Líneas</h3>
+  <div formArrayName="lineas">
+    <div class="linea" *ngFor="let linea of lineas.controls; let i = index" [formGroupName]="i">
+      <label>
+        Producto / servicio
+        <select formControlName="codProducto">
+          <option [ngValue]="0" disabled>Seleccione...</option>
+          <option *ngFor="let producto of productos()" [ngValue]="producto.codProducto">
+            {{ producto.desProducto }} - {{ producto.monPrecio | number: '1.2-2' }} ({{ producto.porImpuesto }} %)
+          </option>
+        </select>
+      </label>
+      <label>
+        Cantidad
+        <input type="number" step="0.01" formControlName="canCantidad" />
+      </label>
+      <button type="button" (click)="quitarLinea(i)" [disabled]="lineas.length === 1">Quitar</button>
+    </div>
+  </div>
+  <button type="button" (click)="agregarLinea()">+ Agregar línea</button>
+
+  <p>Total estimado (con impuestos): <strong>{{ totalEstimado() | number: '1.2-2' }}</strong></p>
+
+  <div class="acciones">
+    <button type="submit" [disabled]="guardando()">Registrar factura</button>
+    <a routerLink="/facturas">Cancelar</a>
+  </div>
+</form>

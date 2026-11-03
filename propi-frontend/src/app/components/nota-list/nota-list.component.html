@@ -1,0 +1,35 @@
+<h2>Notas de crédito / débito</h2>
+
+<a routerLink="/notas/nueva">+ Nueva nota</a>
+
+<p class="error" *ngIf="mensaje()">{{ mensaje() }}</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>N.º</th>
+      <th>Fecha</th>
+      <th>Factura</th>
+      <th>Tipo</th>
+      <th>Motivo</th>
+      <th>Monto</th>
+      <th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let nota of notas()">
+      <td>{{ nota.codNota }}</td>
+      <td>{{ nota.fecNota | date: 'dd/MM/yyyy' }}</td>
+      <td><a [routerLink]="['/facturas', nota.codFactura]">{{ nota.codFactura }}</a></td>
+      <td>{{ nota.desTipoNota }}</td>
+      <td>{{ nota.desMotivo }}</td>
+      <td>{{ nota.monNota | number: '1.2-2' }}</td>
+      <td class="acciones">
+        <a [routerLink]="['/notas', nota.codNota, 'editar']">Editar</a>
+        <button *ngIf="authService.tieneRol('ADMINISTRADOR')" type="button" (click)="eliminar(nota)">Eliminar</button>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<p *ngIf="notas().length === 0">No hay notas registradas.</p>

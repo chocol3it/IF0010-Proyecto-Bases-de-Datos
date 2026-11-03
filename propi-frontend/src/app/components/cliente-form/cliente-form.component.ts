@@ -4,14 +4,13 @@ import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angula
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ClienteService } from '../../services/cliente.service';
 import { CatalogoService } from '../../services/catalogo.service';
-import { Estado, TipoIdentificacion } from '../../models/cliente.model';
+import { Catalogo } from '../../models/catalogo.model';
 
 // Un solo formulario para crear (/clientes/nuevo) y editar (/clientes/:id/editar).
 @Component({
   selector: 'app-cliente-form',
   imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './cliente-form.component.html',
-  styleUrl: './cliente-form.component.css',
 })
 export class ClienteFormComponent implements OnInit {
   private fb = inject(NonNullableFormBuilder);
@@ -21,8 +20,8 @@ export class ClienteFormComponent implements OnInit {
   private router = inject(Router);
 
   codCliente: number | null = null;
-  tiposIdentificacion = signal<TipoIdentificacion[]>([]);
-  estados = signal<Estado[]>([]);
+  tiposIdentificacion = signal<Catalogo[]>([]);
+  estados = signal<Catalogo[]>([]);
   mensaje = signal('');
   guardando = signal(false);
 
@@ -42,11 +41,11 @@ export class ClienteFormComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.catalogoService.obtenerTiposIdentificacion().subscribe({
+    this.catalogoService.listar('tipos-identificacion').subscribe({
       next: (data) => this.tiposIdentificacion.set(data),
       error: (err) => this.mensaje.set(err.error?.detail ?? 'No se pudieron cargar los tipos de identificación.'),
     });
-    this.catalogoService.obtenerEstados().subscribe({
+    this.catalogoService.listar('estados').subscribe({
       next: (data) => this.estados.set(data),
       error: (err) => this.mensaje.set(err.error?.detail ?? 'No se pudieron cargar los estados.'),
     });

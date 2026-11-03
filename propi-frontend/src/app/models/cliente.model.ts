@@ -15,15 +15,6 @@ export interface ClientePayload {
 
 export interface Cliente extends ClientePayload {
   codCliente: number;
-  fecRegistro: string;
-}
-
-export interface TipoIdentificacion {
-  codTipoIdentificacion: number;
   desTipoIdentificacion: string;
-}
-
-export interface Estado {
-  codEstado: string;
-  desEstado: string;
+  fecRegistro: string;
 }

@@ -2,7 +2,7 @@
 
 <a routerLink="/clientes/nuevo">+ Nuevo cliente</a>
 
-<p class="mensaje" *ngIf="mensaje()">{{ mensaje() }}</p>
+<p class="error" *ngIf="mensaje()">{{ mensaje() }}</p>
 
 <table>
   <thead>
@@ -20,15 +20,15 @@
   <tbody>
     <tr *ngFor="let cliente of clientes()">
       <td>{{ cliente.nomCliente }}</td>
-      <td>{{ cliente.numIdentificacion }}</td>
+      <td>{{ cliente.desTipoIdentificacion }} {{ cliente.numIdentificacion }}</td>
       <td>{{ cliente.desActividadEconomica }}</td>
       <td>{{ cliente.desCorreo }}</td>
       <td>{{ cliente.numTelefono }}</td>
       <td>{{ cliente.fecRegistro | date: 'dd/MM/yyyy' }}</td>
       <td>{{ cliente.codEstado === 'A' ? 'Activo' : 'Inactivo' }}</td>
-      <td>
+      <td class="acciones">
         <a [routerLink]="['/clientes', cliente.codCliente, 'editar']">Editar</a>
-        <button type="button" (click)="eliminar(cliente)">Eliminar</button>
+        <button *ngIf="authService.tieneRol('ADMINISTRADOR')" type="button" (click)="eliminar(cliente)">Eliminar</button>
       </td>
     </tr>
   </tbody>

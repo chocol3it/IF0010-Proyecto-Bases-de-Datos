@@ -13,8 +13,8 @@
     Tipo de identificación
     <select formControlName="codTipoIdentificacion">
       <option [ngValue]="0" disabled>Seleccione...</option>
-      <option *ngFor="let tipo of tiposIdentificacion()" [ngValue]="tipo.codTipoIdentificacion">
-        {{ tipo.desTipoIdentificacion }}
+      <option *ngFor="let tipo of tiposIdentificacion()" [ngValue]="tipo.codigo">
+        {{ tipo.descripcion }}
       </option>
     </select>
   </label>
@@ -74,7 +74,7 @@
   <label>
     Estado
     <select formControlName="codEstado">
-      <option *ngFor="let estado of estados()" [ngValue]="estado.codEstado">{{ estado.desEstado }}</option>
+      <option *ngFor="let estado of estados()" [ngValue]="estado.codigo">{{ estado.descripcion }}</option>
     </select>
   </label>
 

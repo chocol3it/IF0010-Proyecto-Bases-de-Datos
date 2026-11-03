@@ -1,0 +1,33 @@
+<h2>Productos y servicios</h2>
+
+<a routerLink="/productos/nuevo">+ Nuevo producto</a>
+
+<p class="error" *ngIf="mensaje()">{{ mensaje() }}</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>CABYS</th>
+      <th>Descripción</th>
+      <th>Unidad</th>
+      <th>Precio</th>
+      <th>Impuesto</th>
+      <th>Estado</th>
+      <th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let producto of productos()">
+      <td>{{ producto.codCabys }}</td>
+      <td>{{ producto.desProducto }}</td>
+      <td>{{ producto.desUnidadMedida }}</td>
+      <td>{{ producto.monPrecio | number: '1.2-2' }}</td>
+      <td>{{ producto.desTipoImpuesto }}</td>
+      <td>{{ producto.codEstado === 'A' ? 'Activo' : 'Inactivo' }}</td>
+      <td class="acciones">
+        <a [routerLink]="['/productos', producto.codProducto, 'editar']">Editar</a>
+        <button type="button" (click)="eliminar(producto)">Eliminar</button>
+      </td>
+    </tr>
+  </tbody>
+</table>

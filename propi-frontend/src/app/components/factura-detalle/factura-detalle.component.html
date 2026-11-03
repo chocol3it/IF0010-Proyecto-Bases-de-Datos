@@ -1,0 +1,97 @@
+<a routerLink="/facturas">&larr; Volver a facturas</a>
+
+<p class="error" *ngIf="mensaje()">{{ mensaje() }}</p>
+
+<ng-container *ngIf="factura() as f">
+  <h2>Factura N.º {{ f.codFactura }}</h2>
+  <p>
+    <strong>Cliente:</strong> {{ f.nomCliente }}<br />
+    <strong>Fecha:</strong> {{ f.fecFactura | date: 'dd/MM/yyyy HH:mm' }}<br />
+    <strong>Condición:</strong> {{ f.desCondicionVenta }} &nbsp;
+    <strong>Medio de pago:</strong> {{ f.desMedioPago }}<br />
+    <strong>Moneda:</strong> {{ f.codIso }} &nbsp; <strong>Tipo de cambio:</strong> {{ f.monTipoCambio }}<br />
+    <strong>Observaciones:</strong> {{ f.desObservaciones }}
+  </p>
+
+  <h3>Líneas</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>CABYS</th>
+        <th>Producto / servicio</th>
+        <th>Cantidad</th>
+        <th>Precio unitario</th>
+        <th>Monto línea</th>
+        <th>Impuesto</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let linea of detalle()">
+        <td>{{ linea.codCabys }}</td>
+        <td>{{ linea.desProducto }}</td>
+        <td>{{ linea.canCantidad }}</td>
+        <td>{{ linea.monPrecioUnitario | number: '1.2-2' }}</td>
+        <td>{{ linea.monLinea | number: '1.2-2' }}</td>
+        <td>{{ linea.monImpuesto | number: '1.2-2' }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>
+    <strong>Subtotal:</strong> {{ f.monSubtotal | number: '1.2-2' }} &nbsp;
+    <strong>Impuestos:</strong> {{ f.monTotalImpuestos | number: '1.2-2' }} &nbsp;
+    <strong>Total:</strong> {{ f.monTotal | number: '1.2-2' }}
+  </p>
+
+  <h3>Notas de crédito / débito</h3>
+  <a [routerLink]="['/notas/nueva']" [queryParams]="{ factura: f.codFactura }">+ Agregar nota</a>
+  <table>
+    <thead>
+      <tr>
+        <th>N.º</th>
+        <th>Fecha</th>
+        <th>Tipo</th>
+        <th>Motivo</th>
+        <th>Monto</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let nota of notas()">
+        <td>{{ nota.codNota }}</td>
+        <td>{{ nota.fecNota | date: 'dd/MM/yyyy' }}</td>
+        <td>{{ nota.desTipoNota }}</td>
+        <td>{{ nota.desMotivo }}</td>
+        <td>{{ nota.monNota | number: '1.2-2' }}</td>
+      </tr>
+    </tbody>
+  </table>
+  <p *ngIf="notas().length === 0">La factura no tiene notas.</p>
+
+  <!-- Solo el administrador modifica o elimina facturas -->
+  <ng-container *ngIf="authService.tieneRol('ADMINISTRADOR')">
+    <h3>Modificar factura</h3>
+    <p>Solo se modifican datos que no afectan montos; los montos se corrigen con notas.</p>
+    <form [formGroup]="form" (ngSubmit)="actualizar()">
+      <label>
+        Condición de venta
+        <select formControlName="codCondicionVenta">
+          <option *ngFor="let item of condiciones()" [ngValue]="item.codigo">{{ item.descripcion }}</option>
+        </select>
+      </label>
+      <label>
+        Medio de pago
+        <select formControlName="codMedioPago">
+          <option *ngFor="let item of mediosPago()" [ngValue]="item.codigo">{{ item.descripcion }}</option>
+        </select>
+      </label>
+      <label>
+        Observaciones
+        <textarea formControlName="desObservaciones" rows="2"></textarea>
+      </label>
+      <div class="acciones">
+        <button type="submit">Guardar cambios</button>
+        <button type="button" (click)="eliminar()">Eliminar factura</button>
+      </div>
+    </form>
+  </ng-container>
+</ng-container>

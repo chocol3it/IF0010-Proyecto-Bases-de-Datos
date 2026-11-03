@@ -1,0 +1,39 @@
+<h2>{{ codTipoImpuesto ? 'Editar tipo de impuesto' : 'Nuevo tipo de impuesto' }}</h2>
+
+<p class="error" *ngIf="mensaje()">{{ mensaje() }}</p>
+
+<form [formGroup]="form" (ngSubmit)="guardar()">
+  <label>
+    Código de tarifa (Hacienda)
+    <input type="text" formControlName="codTarifa" placeholder="08" />
+  </label>
+  <p class="error" *ngIf="form.controls.codTarifa.touched && form.controls.codTarifa.invalid">
+    La tarifa son 2 dígitos, ej. 08.
+  </p>
+
+  <label>
+    Descripción
+    <input type="text" formControlName="desTipoImpuesto" />
+  </label>
+
+  <label>
+    Porcentaje
+    <input type="number" step="0.01" formControlName="porImpuesto" />
+  </label>
+  <p class="error" *ngIf="form.controls.porImpuesto.touched && form.controls.porImpuesto.invalid">
+    El porcentaje debe estar entre 0 y 100.
+  </p>
+
+  <label>
+    Estado
+    <select formControlName="codEstado">
+      <option value="A">Activo</option>
+      <option value="I">Inactivo</option>
+    </select>
+  </label>
+
+  <div class="acciones">
+    <button type="submit">Guardar</button>
+    <a routerLink="/tipos-impuesto">Cancelar</a>
+  </div>
+</form>

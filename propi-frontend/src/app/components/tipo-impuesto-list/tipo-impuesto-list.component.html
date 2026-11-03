@@ -1,0 +1,29 @@
+<h2>Tipos de impuesto</h2>
+
+<a routerLink="/tipos-impuesto/nuevo">+ Nuevo tipo de impuesto</a>
+
+<p class="error" *ngIf="mensaje()">{{ mensaje() }}</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Tarifa</th>
+      <th>Descripción</th>
+      <th>Porcentaje</th>
+      <th>Estado</th>
+      <th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let tipo of tipos()">
+      <td>{{ tipo.codTarifa }}</td>
+      <td>{{ tipo.desTipoImpuesto }}</td>
+      <td>{{ tipo.porImpuesto }} %</td>
+      <td>{{ tipo.codEstado === 'A' ? 'Activo' : 'Inactivo' }}</td>
+      <td class="acciones">
+        <a [routerLink]="['/tipos-impuesto', tipo.codTipoImpuesto, 'editar']">Editar</a>
+        <button type="button" (click)="eliminar(tipo)">Eliminar</button>
+      </td>
+    </tr>
+  </tbody>
+</table>

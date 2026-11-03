@@ -2,16 +2,17 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ClienteService } from '../../services/cliente.service';
+import { AuthService } from '../../services/auth.service';
 import { Cliente } from '../../models/cliente.model';
 
 @Component({
   selector: 'app-cliente-list',
   imports: [CommonModule, RouterLink],
   templateUrl: './cliente-list.component.html',
-  styleUrl: './cliente-list.component.css',
 })
 export class ClienteListComponent implements OnInit {
   private clienteService = inject(ClienteService);
+  authService = inject(AuthService);
 
   clientes = signal<Cliente[]>([]);
   mensaje = signal('');
