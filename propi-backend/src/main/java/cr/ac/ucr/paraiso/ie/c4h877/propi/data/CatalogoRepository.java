@@ -1,16 +1,21 @@
 package cr.ac.ucr.paraiso.ie.c4h877.propi.data;
 
-import cr.ac.ucr.paraiso.ie.c4h877.propi.domain.Estado;
-import cr.ac.ucr.paraiso.ie.c4h877.propi.domain.TipoIdentificacion;
+import cr.ac.ucr.paraiso.ie.c4h877.propi.domain.Catalogo;
 import java.util.List;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.Repository;
+import org.springframework.stereotype.Repository;
 
-public interface CatalogoRepository extends Repository<Estado, String> {
+@Repository
+public class CatalogoRepository {
 
-    @Query(value = "EXEC facturacion.pa_estados_listar", nativeQuery = true)
-    List<Estado> listarEstados();
+    private final ConexionBD conexionBD;
 
-    @Query(value = "EXEC facturacion.pa_tipos_identificacion_listar", nativeQuery = true)
-    List<TipoIdentificacion> listarTiposIdentificacion();
+    public CatalogoRepository(ConexionBD conexionBD) {
+        this.conexionBD = conexionBD;
+    }
+
+    // Todos los pa_*_listar devuelven el código en la columna 1 y la descripción en la 2
+    public List<Catalogo> listar(String procedimiento) {
+        return conexionBD.ejecutar(jdbc -> jdbc.query("EXEC facturacion." + procedimiento,
+                (rs, fila) -> new Catalogo(rs.getObject(1), rs.getString(2))));
+    }
 }
