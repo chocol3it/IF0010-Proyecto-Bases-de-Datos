@@ -2,6 +2,10 @@
 body {
   margin: 0;
   font-family: system-ui, sans-serif;
+  /* colores fijos para que se lea igual aunque el navegador esté en modo oscuro */
+  color-scheme: light;
+  background-color: #fff;
+  color: #111827;
 }
 
 table {
