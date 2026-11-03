@@ -9,6 +9,8 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -37,16 +39,51 @@ public class GlobalExceptionHandler {
         return response(HttpStatus.NOT_FOUND, exception.getMessage());
     }
 
-    // Errores lanzados por los SP con THROW 5000x: se devuelve el mensaje del SP.
-    // 50002 = registro no existe; los demás son reglas de negocio.
+    // Errores que devuelve SQL Server:
+    //   229       -> el rol del usuario no tiene permiso sobre el procedimiento (REQ 008)
+    //   50002     -> THROW de un SP: registro inexistente
+    //   50004     -> THROW de un SP: usuario sin rol
+    //   otros 5xxxx -> THROW de un SP: regla de negocio
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<ErrorResponseDTO> handleDatabase(DataAccessException exception) {
         Throwable causa = NestedExceptionUtils.getMostSpecificCause(exception);
-        if (causa instanceof SQLException sql && sql.getErrorCode() >= 50000) {
-            HttpStatus status = sql.getErrorCode() == 50002 ? HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST;
-            return response(status, sql.getMessage());
+        if (causa instanceof SQLException sql) {
+            int codigo = sql.getErrorCode();
+            if (codigo == 229) {
+                return response(HttpStatus.FORBIDDEN, "Su rol no tiene permiso para realizar esta operación.");
+            }
+            if (codigo == 50002) {
+                return response(HttpStatus.NOT_FOUND, sql.getMessage());
+            }
+            if (codigo == 50004) {
+                return response(HttpStatus.FORBIDDEN, sql.getMessage());
+            }
+            if (codigo >= 50000) {
+                return response(HttpStatus.BAD_REQUEST, sql.getMessage());
+            }
         }
         return response(HttpStatus.INTERNAL_SERVER_ERROR, "Error en la base de datos: " + causa.getMessage());
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ErrorResponseDTO> handleCredenciales(BadCredentialsException exception) {
+        return response(HttpStatus.UNAUTHORIZED, exception.getMessage());
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponseDTO> handleIllegalArgument(IllegalArgumentException exception) {
+        return response(HttpStatus.BAD_REQUEST, exception.getMessage());
+    }
+
+    // Ej.: no se pudo abrir la conexión a SQL Server durante el login
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponseDTO> handleIllegalState(IllegalStateException exception) {
+        return response(HttpStatus.SERVICE_UNAVAILABLE, exception.getMessage());
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorResponseDTO> handleParametro(MissingServletRequestParameterException exception) {
+        return response(HttpStatus.BAD_REQUEST, "Falta el parámetro " + exception.getParameterName() + ".");
     }
 
     @ExceptionHandler(Exception.class)

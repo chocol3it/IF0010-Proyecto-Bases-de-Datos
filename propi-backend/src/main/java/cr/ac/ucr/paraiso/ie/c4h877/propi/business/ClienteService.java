@@ -6,10 +6,9 @@ import cr.ac.ucr.paraiso.ie.c4h877.propi.dto.ClienteDTO;
 import cr.ac.ucr.paraiso.ie.c4h877.propi.exception.ResourceNotFoundException;
 import java.util.List;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-// Las transacciones de negocio viven en los procedimientos almacenados
-// (BEGIN/COMMIT/ROLLBACK); aquí solo se llaman.
+// Las transacciones y reglas de negocio viven en los procedimientos almacenados
+// (BEGIN/COMMIT/ROLLBACK); el servicio solo los llama.
 @Service
 public class ClienteService {
 
@@ -20,31 +19,22 @@ public class ClienteService {
     }
 
     public List<Cliente> listar() {
-        return clienteRepository.consultarTodos();
+        return clienteRepository.consultar(null);
     }
 
     public Cliente obtener(Integer codCliente) {
-        Cliente cliente = clienteRepository.consultarPorId(codCliente);
-        if (cliente == null) {
-            throw new ResourceNotFoundException("Cliente con código " + codCliente + " no encontrado");
-        }
-        return cliente;
+        return clienteRepository.consultar(codCliente).stream().findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente " + codCliente + " no encontrado"));
     }
 
-    public Cliente crear(ClienteDTO d) {
-        return clienteRepository.insertar(d.nomCliente(), d.codTipoIdentificacion(), d.numIdentificacion(),
-                d.desProvincia(), d.desCanton(), d.desDistrito(), d.desBarrio(), d.desProfesion(),
-                d.desActividadEconomica(), d.desCorreo(), d.numTelefono(), d.codEstado());
+    public Cliente crear(ClienteDTO cliente) {
+        return clienteRepository.insertar(cliente);
     }
 
-    public Cliente actualizar(Integer codCliente, ClienteDTO d) {
-        return clienteRepository.actualizar(codCliente, d.nomCliente(), d.codTipoIdentificacion(),
-                d.numIdentificacion(), d.desProvincia(), d.desCanton(), d.desDistrito(), d.desBarrio(),
-                d.desProfesion(), d.desActividadEconomica(), d.desCorreo(), d.numTelefono(), d.codEstado());
+    public Cliente actualizar(Integer codCliente, ClienteDTO cliente) {
+        return clienteRepository.actualizar(codCliente, cliente);
     }
 
-    // JPA exige una transacción para las consultas @Modifying
-    @Transactional
     public void eliminar(Integer codCliente) {
         clienteRepository.eliminar(codCliente);
     }
