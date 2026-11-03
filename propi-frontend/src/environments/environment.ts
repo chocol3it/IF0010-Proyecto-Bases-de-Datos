@@ -1,4 +1,5 @@
+// En desarrollo, ng serve reenvía /api al backend (http://localhost:8080) con proxy.conf.json
 export const environment = {
   production: false,
-  API_URL: 'http://localhost:8080/api/v1/',
+  API_URL: '/api/v1/',
 };
