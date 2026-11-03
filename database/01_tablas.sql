@@ -85,24 +85,28 @@ GO
 
 /* ---------------------- Entidades ---------------------- */
 
--- num_identificacion, num_telefono y des_correo se cifrarán (REQ 006)
--- después del primer punto de control; se pasarán a VARBINARY.
+-- REQ 006: num_identificacion, des_correo y num_telefono se guardan cifrados
+-- (VARBINARY) con la llave simétrica llave_clientes (ver 03_cifrado.sql).
+-- Como el valor cifrado cambia en cada encriptación, la unicidad de la
+-- identificación se controla con su hash SHA2_256 (cod_hash_identificacion).
 CREATE TABLE facturacion.clientes (
     cod_cliente             INT IDENTITY(1,1) NOT NULL,
     nom_cliente             VARCHAR(150)      NOT NULL,
     cod_tipo_identificacion INT               NOT NULL,
-    num_identificacion      VARCHAR(20)       NOT NULL,
+    num_identificacion      VARBINARY(256)    NOT NULL,
+    cod_hash_identificacion VARBINARY(32)     NOT NULL,
     des_provincia           VARCHAR(50)       NOT NULL,
     des_canton              VARCHAR(50)       NOT NULL,
     des_distrito            VARCHAR(50)       NOT NULL,
     des_barrio              VARCHAR(100)      NULL,
     des_profesion           VARCHAR(100)      NULL,
     des_actividad_economica VARCHAR(150)      NULL,
-    des_correo              VARCHAR(150)      NOT NULL,
-    num_telefono            VARCHAR(20)       NOT NULL,
+    des_correo              VARBINARY(512)    NOT NULL,
+    num_telefono            VARBINARY(256)    NOT NULL,
     fec_registro            DATETIME          NOT NULL CONSTRAINT DF_clientes_fec_registro DEFAULT GETDATE(),
     cod_estado              CHAR(1)           NOT NULL CONSTRAINT DF_clientes_estado DEFAULT 'A',
     CONSTRAINT PK_clientes PRIMARY KEY (cod_cliente),
+    CONSTRAINT UQ_clientes_identificacion UNIQUE (cod_tipo_identificacion, cod_hash_identificacion),
     CONSTRAINT FK_clientes_tipos_identificacion FOREIGN KEY (cod_tipo_identificacion)
         REFERENCES facturacion.tipos_identificacion (cod_tipo_identificacion),
     CONSTRAINT FK_clientes_estados FOREIGN KEY (cod_estado)
