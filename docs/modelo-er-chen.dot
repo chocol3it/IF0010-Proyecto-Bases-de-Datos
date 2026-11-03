@@ -1,5 +1,5 @@
 // Modelo entidad-relacion (notacion de Chen) - Propi Facturacion
-// Generar imagen: neato -Tpng modelo-er-chen.dot -o modelo-er-chen.png
+// Generar: neato -Tpng modelo-er-chen.dot -o modelo-er-chen.png
 graph chen {
   graph [overlap=false, splines=true, sep="+6", fontname="Helvetica", bgcolor="white"];
   node [fontname="Helvetica", fontsize=10];

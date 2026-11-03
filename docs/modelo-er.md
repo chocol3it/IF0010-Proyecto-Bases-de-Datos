@@ -1,29 +1,15 @@
-# Modelo entidad-relación (REQ 001)
+# Modelo entidad-relación y grafo relacional (REQ 001)
 
-Base de datos `PropiFacturacion_AAMM`, esquema `facturacion`. Notación de Chen.
+Base de datos `PropiFacturacion_AAMM`.
 
-![Modelo entidad-relación en notación de Chen](modelo-er-chen.png)
+## Modelo entidad-relación
 
-| Símbolo | Significado |
-|---|---|
-| Rectángulo | Entidad |
-| Rombo | Relación, con su cardinalidad (1 / N) |
-| Óvalo | Atributo |
-| Óvalo con texto subrayado | Atributo identificador (llave primaria) |
-| Óvalo punteado | Atributo derivado (lo calcula el procedimiento almacenado) |
-| Óvalo con óvalos hijos | Atributo compuesto (`domicilio`) |
+Notación de Chen: rectángulo = entidad, rombo = relación (1 / N), óvalo = atributo,
+subrayado = llave primaria, punteado = atributo derivado.
 
-Las llaves foráneas no se dibujan como atributos: las representan las relaciones.
-Las bitácoras del esquema `auditoria` no se relacionan con otras entidades, por eso
-solo aparecen en el grafo relacional.
-
-El diagrama se genera desde `modelo-er-chen.dot` con Graphviz:
-`neato -Tpng modelo-er-chen.dot -o modelo-er-chen.png` (también hay versión `.svg`).
+![Modelo entidad-relación](modelo-er-chen.png)
 
 ## Grafo relacional
-
-Todas las tablas de la base de datos con sus columnas, llaves y relaciones. Las bitácoras (`bitacora_acceso`, `bitacora_auditoria`) no tienen relaciones con otras tablas.
-GitHub dibuja el diagrama automáticamente; para exportarlo como imagen se puede pegar en [mermaid.live](https://mermaid.live).
 
 ```mermaid
 erDiagram
@@ -153,23 +139,3 @@ erDiagram
         VARCHAR des_datos
     }
 ```
-
-### Detalle de tablas
-
-Notación: `PK` llave primaria, `→ tabla` llave foránea.
-
-- **estados** (`cod_estado` PK, des_estado)
-- **tipos_identificacion** (`cod_tipo_identificacion` PK, des_tipo_identificacion)
-- **condiciones_venta** (`cod_condicion_venta` PK, des_condicion_venta)
-- **medios_pago** (`cod_medio_pago` PK, des_medio_pago)
-- **monedas** (`cod_moneda` PK, cod_iso, des_moneda)
-- **unidades_medida** (`cod_unidad_medida` PK, des_unidad_medida)
-- **tipos_nota** (`cod_tipo_nota` PK, des_tipo_nota)
-- **clientes** (`cod_cliente` PK, nom_cliente, cod_tipo_identificacion → tipos_identificacion, num_identificacion, des_provincia, des_canton, des_distrito, des_barrio, des_profesion, des_actividad_economica, des_correo, num_telefono, fec_registro, cod_estado → estados)
-- **tipos_impuesto** (`cod_tipo_impuesto` PK, cod_tarifa, des_tipo_impuesto, por_impuesto, cod_estado → estados)
-- **productos_servicios** (`cod_producto` PK, cod_cabys, des_producto, cod_unidad_medida → unidades_medida, mon_precio, cod_tipo_impuesto → tipos_impuesto, cod_estado → estados)
-- **facturas** (`cod_factura` PK, cod_cliente → clientes, fec_factura, cod_condicion_venta → condiciones_venta, cod_medio_pago → medios_pago, cod_moneda → monedas, mon_tipo_cambio, des_observaciones, mon_subtotal, mon_total_impuestos, mon_total)
-- **facturas_detalle** (`cod_detalle` PK, cod_factura → facturas, cod_producto → productos_servicios, can_cantidad, mon_precio_unitario, mon_impuesto, mon_linea)
-- **notas_credito_debito** (`cod_nota` PK, fec_nota, cod_factura → facturas, cod_tipo_nota → tipos_nota, des_motivo, mon_nota)
-- **bitacora_acceso** (`cod_acceso` PK, nom_usuario, nom_terminal, des_direccion_ip, fec_ingreso, fec_salida, fec_registro)
-- **bitacora_auditoria** (fec_registro, cod_guid, ind_accion, cod_usuario, cod_sesion_usuario, cod_tabla, cod_llave, des_datos)
