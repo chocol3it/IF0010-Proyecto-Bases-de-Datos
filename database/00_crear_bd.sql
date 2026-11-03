@@ -38,6 +38,10 @@ BEGIN
 END;
 GO
 
+-- Permite el nivel de aislamiento SNAPSHOT que usan los reportes (REQ 007)
+ALTER DATABASE PropiFacturacion_AAMM SET ALLOW_SNAPSHOT_ISOLATION ON;
+GO
+
 -- Esquemas: uno para el negocio y otro para las bitácoras
 IF SCHEMA_ID('facturacion') IS NULL EXEC ('CREATE SCHEMA facturacion');
 GO
