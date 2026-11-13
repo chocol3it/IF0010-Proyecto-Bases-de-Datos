@@ -1,34 +1,17 @@
-/* =============================================================
-   Proyecto IF0010 - Sistema de Facturación Propi
-   14 - Medición de rendimiento de los procedimientos (REQ 009)
-   -------------------------------------------------------------
-   Herramienta para obtener el cuadro de antes y después:
-     auditoria.pa_medir_rendimiento 'ANTES' | 'DESPUES'
-       Ejecuta cada procedimiento almacenado varias veces y guarda,
-       por prueba: tiempo promedio (ms), CPU promedio (ms), lecturas
-       lógicas promedio y los operadores de su plan de ejecución
-       (Table Scan, Index Seek, Key Lookup, etc.).
-     auditoria.v_comparacion_rendimiento
-       Pone lado a lado la medición ANTES y la DESPUES.
-
-   Cómo se usa (conectado con un login sysadmin, ej. Windows):
-     1. Sin índices:   EXEC auditoria.pa_medir_rendimiento 'ANTES';
-     2. Ejecutar 13_indices.sql
-     3. Con índices:   EXEC auditoria.pa_medir_rendimiento 'DESPUES';
-     4. SELECT * FROM auditoria.v_comparacion_rendimiento;
-   En SSMS conviene activar Consulta > Opciones de consulta >
-   Resultados > Cuadrícula > "Descartar resultados después de la
-   ejecución" en la ventana de los pasos 1 y 3: cada procedimiento
-   devuelve sus filas y serían cientos de resultados.
-
-   Las pruebas de escritura (insertar, actualizar, eliminar) se
-   ejecutan dentro de una transacción que se revierte: miden el costo
-   sin cambiar los datos. Las de "eliminar en uso" terminan en el
-   error de negocio 50003 a propósito: miden la validación.
-   pa_acceso_ingresar no se mide: necesita la conexión de un usuario
-   con rol y aquí se ejecuta como administrador del servidor.
-   ============================================================= */
+--Proyecto IF0010 - Sistema de Facturación Propi
+--14 - Medición de rendimiento de los procedimientos (REQ 009)
+--Uso: EXEC auditoria.pa_medir_rendimiento 'ANTES'; ejecutar 13_indices.sql; EXEC auditoria.pa_medir_rendimiento 'DESPUES';
+--Resultado: SELECT * FROM auditoria.v_comparacion_rendimiento;
+--Las pruebas de escritura se revierten, no cambian los datos
 USE PropiFacturacion_AAMM;
+GO
+--Necesarios para leer el XML de los planes
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+--Query Store guarda los planes de ejecución de cada consulta
+ALTER DATABASE PropiFacturacion_AAMM SET QUERY_STORE = ON (QUERY_CAPTURE_MODE = ALL);
 GO
 
 IF OBJECT_ID('auditoria.medicion_rendimiento') IS NULL
@@ -55,7 +38,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    /* Valores reales de la base para los parámetros de las pruebas */
+    --Valores reales de la base para los parámetros
     DECLARE @cliente INT = (SELECT MIN(cod_cliente) FROM facturacion.clientes);
     DECLARE @cliente_con_facturas INT = (SELECT TOP 1 cod_cliente FROM facturacion.facturas ORDER BY cod_factura);
     DECLARE @tipo_impuesto INT = (SELECT TOP 1 cod_tipo_impuesto FROM facturacion.productos_servicios ORDER BY cod_producto);
@@ -110,9 +93,9 @@ BEGIN
 
     DELETE FROM auditoria.medicion_rendimiento WHERE des_fase = @des_fase;
 
-    -- Se borran los planes guardados para que cada procedimiento se compile
-    -- con los índices que existen en este momento
+    --Se limpia la caché para compilar con los índices actuales
     DBCC FREEPROCCACHE WITH NO_INFOMSGS;
+    DECLARE @inicio_fase DATETIMEOFFSET = SYSDATETIMEOFFSET();
 
     DECLARE @i INT = 1, @total INT = (SELECT COUNT(*) FROM @pruebas), @k INT;
     DECLARE @sentencia NVARCHAR(MAX), @escritura BIT;
@@ -124,7 +107,7 @@ BEGIN
         SELECT @sentencia = sentencia, @escritura = escritura FROM @pruebas WHERE n = @i;
         SELECT @microsegundos = 0, @lecturas = 0, @cpu = 0, @k = 0;
 
-        -- La vuelta 0 es de calentamiento (compila el plan y sube las páginas a memoria): no se cuenta
+        --La vuelta 0 es de calentamiento y no se cuenta
         WHILE @k <= @can_ejecuciones
         BEGIN
             SELECT @lecturas0 = logical_reads, @cpu0 = cpu_time FROM sys.dm_exec_requests WHERE session_id = @@SPID;
@@ -158,19 +141,30 @@ BEGIN
         SET @i += 1;
     END;
 
-    /* Operadores del plan de ejecución de cada procedimiento, tomados de la caché de planes.
-       Ej.: "Clustered Index Scan facturas.PK_facturas, Index Seek facturas.IX_facturas_fec_factura" */
+    --Operadores del plan de cada procedimiento, tomados de Query Store
+    --(la caché no guarda los planes de los procedimientos que abren la llave simétrica)
+    EXEC sys.sp_query_store_flush_db;
+
     WITH XMLNAMESPACES (DEFAULT 'http://schemas.microsoft.com/sqlserver/2004/07/showplan'),
+    planes AS (
+        --Las variantes de parámetros opcionales (SQL Server 2022+) se asocian al procedimiento padre
+        SELECT OBJECT_NAME(COALESCE(NULLIF(q.object_id, 0), padre.object_id)) AS procedimiento,
+               TRY_CAST(p.query_plan AS XML) AS plan_xml
+        FROM sys.query_store_query q
+        JOIN sys.query_store_plan p ON p.query_id = q.query_id
+        LEFT JOIN sys.query_store_query_variant v ON v.query_variant_query_id = q.query_id
+        LEFT JOIN sys.query_store_query padre ON padre.query_id = v.parent_query_id
+        WHERE COALESCE(NULLIF(q.object_id, 0), padre.object_id) IS NOT NULL
+          AND p.last_execution_time >= @inicio_fase
+    ),
     operadores AS (
-        SELECT DISTINCT OBJECT_NAME(ps.object_id) AS procedimiento,
+        SELECT DISTINCT pl.procedimiento,
                CONCAT(r.value('@PhysicalOp', 'VARCHAR(60)'), ' ',
                       REPLACE(REPLACE(r.value('(*/Object/@Table)[1]', 'VARCHAR(128)'), '[', ''), ']', ''),
                       ISNULL('.' + REPLACE(REPLACE(r.value('(*/Object/@Index)[1]', 'VARCHAR(128)'), '[', ''), ']', ''), '')) AS operador
-        FROM sys.dm_exec_procedure_stats ps
-        CROSS APPLY sys.dm_exec_query_plan(ps.plan_handle) qp
-        CROSS APPLY qp.query_plan.nodes('//RelOp') n(r)
-        WHERE ps.database_id = DB_ID()
-          AND r.exist('*/Object[@Table]') = 1
+        FROM planes pl
+        CROSS APPLY pl.plan_xml.nodes('//RelOp') n(r)
+        WHERE r.exist('*/Object[@Table]') = 1
           AND r.value('(*/Object/@Table)[1]', 'VARCHAR(128)') NOT LIKE '%#%'
           AND r.value('(*/Object/@Table)[1]', 'VARCHAR(128)') NOT LIKE '%@%'
     )
