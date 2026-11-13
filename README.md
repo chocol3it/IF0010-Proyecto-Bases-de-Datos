@@ -9,7 +9,7 @@
 | Carpeta | Contenido |
 |---|---|
 | `database/` | Scripts de SQL Server, numerados en el orden de ejecución |
-| `docs/` | Modelo entidad-relación y grafo relacional |
+| `docs/` | Modelo entidad-relación, grafo relacional y documentos de los REQ 009 a 014 |
 | `propi-backend/` | API REST en Spring Boot 4 (Java 21, Spring JDBC, Spring Security con JWT) |
 | `propi-frontend/` | SPA en Angular 22 |
 
@@ -43,6 +43,18 @@ Base de datos: `PropiFacturacion_AAMM`. Ejecutar en SSMS, en orden:
 | `09_triggers.sql` | 3 triggers de auditoría por tabla | 005 |
 | `10_reportes.sql` | 4 reportes con aislamiento snapshot | 007 |
 | `11_seguridad.sql` | Logins, usuarios, roles y permisos GRANT / REVOKE / DENY | 003, 004, 008 |
+| `12_datos_prueba.sql` | Datos de prueba: 1 000 clientes, productos y notas, 3 000 facturas, 20 000 registros de auditoría | 009 |
+| `13_indices.sql` | Índice clustered de la bitácora y 7 nonclustered | 009 |
+| `14_medicion_rendimiento.sql` | `auditoria.pa_medir_rendimiento` y vista de comparación antes/después (activa Query Store) | 009 |
+| `15_diccionario.sql` | Descripciones como propiedades extendidas y vistas `dbo.v_diccionario_*` | 010 |
+| `16_respaldos.sql` | Modelo FULL y `dbo.pa_respaldar` (completo, diferencial, log y llaves) | 013 |
+| `17_programacion_respaldos.sql` | Trabajos del Agente SQL para los respaldos | 013 |
+| `18_restauracion_prueba.sql` | Restaura la cadena de respaldos en otra base y la verifica | 013 |
+| `19_logins_secundaria.sql` | Genera los logins con el mismo SID para la instancia secundaria (se ejecuta en la principal) | 014 |
+| `20_replica_secundaria.sql` | Log shipping: copia en STANDBY, aplicación de logs y conmutación (se ejecuta en la secundaria) | 014 |
+
+Los scripts 12 a 14 son del REQ 009 y los 16 a 20 necesitan la carpeta `C:\PropiRespaldos\` con permiso de escritura
+para la cuenta del servicio de SQL Server. Los 17 y 20 usan el Agente SQL (SQL Server Developer o Standard).
 
 ### Usuarios de prueba
 
@@ -124,6 +136,11 @@ Abrir `http://localhost:4200` e iniciar sesión con uno de los usuarios de prueb
 - [x] REQ 005 Triggers de auditoría en todas las tablas
 - [x] REQ 006 Cifrado de identificación, teléfono y correo
 - [x] REQ 007 Reportes con TRY/CATCH, transacción y aislamiento snapshot
-- [ ] REQ 009 Datos de prueba, planes de ejecución e índices
-- [ ] REQ 010 a 013 Documentación
-- [ ] REQ 014 Réplica
+**Punto de control 3**
+
+- [x] REQ 009 Datos de prueba, planes de ejecución e índices (`docs/REQ009-planes-indices.md`)
+- [x] REQ 010 Diccionario de datos (`docs/REQ010-diccionario-datos.md`)
+- [x] REQ 011 Plan de continuidad del negocio (`docs/REQ011-plan-continuidad-negocio.md`)
+- [x] REQ 012 Política de seguridad (`docs/REQ012-politica-seguridad.md`)
+- [x] REQ 013 Política de respaldos y DRP (`docs/REQ013-politica-respaldos-drp.md`)
+- [x] REQ 014 Base secundaria con log shipping (`docs/REQ014-replica.md`)
