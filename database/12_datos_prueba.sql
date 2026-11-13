@@ -1,24 +1,8 @@
-/* =============================================================
-   Proyecto IF0010 - Sistema de Facturación Propi
-   12 - Datos de prueba para la optimización (REQ 009)
-   -------------------------------------------------------------
-   Carga un volumen realista para que los planes de ejecución y
-   los índices se puedan medir:
-     clientes              1 000  (datos sensibles cifrados)
-     productos_servicios   1 000
-     facturas              3 000  (fechas repartidas en 2 años)
-     facturas_detalle     ~6 000  (1 a 3 líneas por factura)
-     notas_credito_debito  1 000
-     bitacora_acceso       1 000
-     bitacora_auditoria   20 000  (historial de 2 años)
-   Los catálogos y los tipos de impuesto no se multiplican: son
-   valores reales y fijos (no existen 1 000 monedas o tarifas).
-
-   Durante la carga se desactivan los triggers de auditoría para
-   no llenar la bitácora con miles de inserciones de prueba; la
-   bitácora recibe su propio historial de prueba al final.
-   Se ejecuta una sola vez (si ya hay datos de prueba, no hace nada).
-   ============================================================= */
+--Proyecto IF0010 - Sistema de Facturación Propi
+--12 - Datos de prueba para la optimización (REQ 009)
+--Clientes, productos y notas: 1 000; facturas: 3 000 (~6 000 líneas); accesos: 1 000; auditoría: 20 000
+--Los catálogos no se multiplican porque son valores fijos
+--Los triggers se desactivan durante la carga. Se ejecuta una sola vez
 USE PropiFacturacion_AAMM;
 GO
 SET NOCOUNT ON;
@@ -37,7 +21,7 @@ DISABLE TRIGGER ALL ON facturacion.facturas_detalle;
 DISABLE TRIGGER ALL ON facturacion.notas_credito_debito;
 GO
 
-/* ------------------------- Clientes ------------------------- */
+--Clientes
 OPEN SYMMETRIC KEY llave_clientes DECRYPTION BY CERTIFICATE cert_clientes;
 
 WITH numeros AS (
@@ -68,7 +52,7 @@ CROSS APPLY (SELECT CONCAT('9', RIGHT(CONCAT('00000000', i), 8)) AS identificaci
 CLOSE SYMMETRIC KEY llave_clientes;
 GO
 
-/* ------------------------- Productos ------------------------- */
+--Productos
 WITH numeros AS (
     SELECT TOP (1000) ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS i
     FROM sys.all_objects a CROSS JOIN sys.all_objects b
@@ -79,14 +63,16 @@ SELECT CONCAT('99', RIGHT(CONCAT('00000000000', i), 11)),
        CONCAT('Servicio inmobiliario de prueba ', i),
        (i % 4) + 1,
        ((i % 50) + 1) * 10000,
-       (SELECT TOP 1 cod_tipo_impuesto FROM facturacion.tipos_impuesto
-        ORDER BY ABS(CHECKSUM(i, cod_tipo_impuesto))),
+       (SELECT t.cod_tipo_impuesto
+        FROM (SELECT cod_tipo_impuesto, ROW_NUMBER() OVER (ORDER BY cod_tipo_impuesto) AS rn
+              FROM facturacion.tipos_impuesto) t
+        WHERE t.rn = (i % 4) + 1),
        CASE WHEN i % 20 = 0 THEN 'I' ELSE 'A' END
 FROM numeros;
 GO
 
-/* ------------------------- Facturas y detalle ------------------------- */
--- Clientes y productos activos numerados, para repartirlos entre las facturas
+--Facturas y detalle
+--Clientes y productos activos numerados para repartirlos
 SELECT ROW_NUMBER() OVER (ORDER BY cod_cliente) AS rn, cod_cliente
 INTO #clientes FROM facturacion.clientes WHERE cod_estado = 'A';
 SELECT ROW_NUMBER() OVER (ORDER BY cod_producto) AS rn, p.cod_producto, p.mon_precio, t.por_impuesto
@@ -115,7 +101,7 @@ SELECT c.cod_cliente,
 FROM numeros
 JOIN #clientes c ON c.rn = ((i * 7) % @cant_clientes) + 1;
 
--- 1 a 3 líneas por factura
+--1 a 3 líneas por factura
 INSERT INTO facturacion.facturas_detalle
     (cod_factura, cod_producto, can_cantidad, mon_precio_unitario, mon_impuesto, mon_linea)
 SELECT f.cod_factura, p.cod_producto, l.j,
@@ -128,7 +114,7 @@ JOIN #productos p ON p.rn = ((f.cod_factura * 13 + l.j * 101) % @cant_productos)
 WHERE f.cod_factura > @ultima
   AND l.j <= (f.cod_factura % 3) + 1;
 
--- Totales calculados desde el detalle, igual que en pa_facturas_insertar
+--Totales calculados desde el detalle
 UPDATE f
 SET mon_subtotal        = x.subtotal,
     mon_total_impuestos = x.impuestos,
@@ -139,8 +125,8 @@ CROSS APPLY (SELECT SUM(mon_linea) AS subtotal, SUM(mon_impuesto) AS impuestos
              WHERE d.cod_factura = f.cod_factura) x
 WHERE f.cod_factura > @ultima;
 
-/* ------------------------- Notas ------------------------- */
--- Una nota para una de cada tres facturas nuevas (5 % del total)
+--Notas
+--Una nota por cada tres facturas
 INSERT INTO facturacion.notas_credito_debito (fec_nota, cod_factura, cod_tipo_nota, des_motivo, mon_nota)
 SELECT TOP (1000)
        DATEADD(DAY, 5, f.fec_factura), f.cod_factura,
@@ -154,7 +140,7 @@ ORDER BY f.cod_factura;
 DROP TABLE #clientes, #productos;
 GO
 
-/* ------------------------- Bitácoras ------------------------- */
+--Bitácoras
 WITH numeros AS (
     SELECT TOP (1000) ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS i
     FROM sys.all_objects a CROSS JOIN sys.all_objects b
@@ -195,7 +181,7 @@ GO
 SET NOEXEC OFF;
 GO
 
--- Cantidad de registros por tabla
+--Cantidad de registros por tabla
 SELECT s.name + '.' + t.name AS tabla, SUM(p.rows) AS registros
 FROM sys.tables t
 JOIN sys.schemas s ON s.schema_id = t.schema_id
