@@ -39,6 +39,11 @@ FROM #archivos
 WHERE archivo LIKE @origen + N'[_]log[_]%.trn'
   AND SUBSTRING(archivo, LEN(@origen) + 6, 19) > @desde;
 
+--Con @hasta se aplica hasta el primer log que llega a esa hora; aplicar los siguientes daría error
+IF @hasta IS NOT NULL
+    DELETE FROM #logs
+    WHERE n > (SELECT MIN(n) FROM #logs WHERE SUBSTRING(archivo, LEN(@origen) + 6, 19) >= FORMAT(@hasta, 'yyyyMMdd_HHmmss_fff'));
+
 PRINT CONCAT('Completo:    ', @completo);
 PRINT CONCAT('Diferencial: ', ISNULL(@diferencial, '(ninguno)'));
 DECLARE @cant_logs INT = (SELECT COUNT(*) FROM #logs);

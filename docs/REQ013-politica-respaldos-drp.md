@@ -175,7 +175,7 @@ Cada prueba deja un acta con fecha, archivos usados, tiempos y resultado.
 
 ### Prueba realizada (13 de noviembre de 2026)
 
-Ambiente: SQL Server 2025 Developer, instancias `SQLSERVERPT` (principal) y `SQLSERVERSJ` (otro servidor), base con los datos de prueba del REQ 009.
+Ambiente: SQL Server 2025 Developer, instancias `SQLSERVERPT` (principal) y `SQLSERVERSJ` (otro servidor), base con los datos de prueba del REQ 009. El 23 de noviembre se volvió a desplegar con `propi_despliegue.sql` en el equipo de la defensa (principal `SQLUCR`): la sección 15 generó el primer juego de respaldos (completo, diferencial, log y llaves) y los trabajos del Agente quedaron programados.
 
 | Paso | Resultado |
 |---|---|

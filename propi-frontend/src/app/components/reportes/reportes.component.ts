@@ -74,6 +74,7 @@ export class ReportesComponent {
   private hoy(dias: number): string {
     const fecha = new Date();
     fecha.setDate(fecha.getDate() + dias);
-    return fecha.toISOString().substring(0, 10);
+    // 'en-CA' da el formato AAAA-MM-DD en hora local (toISOString usa UTC y adelanta el día de noche)
+    return fecha.toLocaleDateString('en-CA');
   }
 }

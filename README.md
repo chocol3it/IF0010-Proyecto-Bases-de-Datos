@@ -8,22 +8,36 @@
 
 | Carpeta | Contenido |
 |---|---|
-| `database/` | Scripts de SQL Server, numerados en el orden de ejecución |
+| `database/` | Script único de despliegue (`propi_despliegue.sql`) y anexos de prueba y réplica |
 | `docs/` | Modelo entidad-relación, grafo relacional y documentos de los REQ 009 a 014 |
 | `propi-backend/` | API REST en Spring Boot 4 (Java 21, Spring JDBC, Spring Security con JWT) |
 | `propi-frontend/` | SPA en Angular 22 |
 
-## 1. Preparar SQL Server local (una sola vez)
+## 1. Preparar SQL Server (una sola vez)
 
-El proyecto usa logins de SQL Server, por lo que el servidor debe aceptar **autenticación mixta**
-y Spring Boot se conecta por **TCP en el puerto 1433**.
+Se usan dos instancias de **SQL Server 2025 Developer** (Express no sirve: no tiene Agente SQL,
+necesario para los respaldos programados y la réplica):
+
+| Instancia | Papel | Puerto TCP |
+|---|---|---|
+| `SQLUCR` | Principal: base de la aplicación | 1433 |
+| `SQLSERVERSJ` | Secundaria: réplica con log shipping (REQ 014) | 1435 |
+
+En cada instancia:
 
 1. SSMS → clic derecho sobre el servidor → *Propiedades* → *Seguridad* →
-   **Modo de autenticación de SQL Server y Windows** → Aceptar.
-2. *SQL Server Configuration Manager* → *Configuración de red de SQL Server* →
-   *Protocolos de SQLEXPRESS* → **TCP/IP: Habilitado**. En *Propiedades de TCP/IP* → pestaña
-   *Direcciones IP* → sección *IPAll*: **Puertos TCP dinámicos** vacío y **Puerto TCP = 1433**.
-3. Reiniciar el servicio *SQL Server (SQLEXPRESS)*.
+   **Modo de autenticación de SQL Server y Windows**.
+2. *SQL Server 2025 Configuration Manager* (`SQLServerManager17.msc`) → *Protocolos de la instancia* →
+   **TCP/IP: Habilitado** → *Direcciones IP* → *IPAll*: **Puertos TCP dinámicos** vacío y el **Puerto TCP** de la tabla.
+3. *Servicios de SQL Server* → **SQL Server Agent** con inicio *Automático* e iniciado.
+4. Reiniciar el servicio de SQL Server de la instancia.
+
+Carpeta de respaldos compartida por las dos instancias (PowerShell como administrador):
+
+```powershell
+mkdir C:\PropiRespaldos
+icacls C:\PropiRespaldos /grant "NT Service\MSSQL`$SQLUCR:(OI)(CI)M" "NT Service\SQLAgent`$SQLUCR:(OI)(CI)M" "NT Service\MSSQL`$SQLSERVERSJ:(OI)(CI)M" "NT Service\SQLAgent`$SQLSERVERSJ:(OI)(CI)M"
+```
 
 ## 2. Base de datos
 

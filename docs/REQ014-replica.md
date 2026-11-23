@@ -19,9 +19,12 @@ Una ventaja de log shipping para este proyecto: la secundaria es una copia físi
 
 ## 3. Arquitectura
 
+Las mediciones del 13 de noviembre se hicieron con la principal en la instancia `SQLSERVERPT`; el 23 de noviembre se montó de nuevo en el equipo de la defensa con la principal en `SQLUCR`.
+
+
 | Elemento | Principal | Secundaria |
 |---|---|---|
-| Instancia | `localhost\SQLSERVERPT` (SQL Server 2025 Developer) | `localhost\SQLSERVERSJ` (SQL Server 2025 Developer) |
+| Instancia | `localhost\SQLUCR`, puerto 1433 (SQL Server 2025 Developer) | `localhost\SQLSERVERSJ`, puerto 1435 (SQL Server 2025 Developer) |
 | Base | `PropiFacturacion_AAMM` en lectura y escritura, modelo FULL | `PropiFacturacion_AAMM` en STANDBY (solo lectura) |
 | Trabajo del Agente | **Propi - Respaldo de log**: `pa_respaldar 'LOG'` cada 30 s | **Propi - Aplicar logs de la réplica**: `pa_replica_aplicar_logs` cada 15 s |
 | Carpeta compartida | `C:\PropiRespaldos\` (escritura) | `C:\PropiRespaldos\` (lectura) |
