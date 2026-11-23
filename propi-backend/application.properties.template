@@ -2,7 +2,7 @@ spring.application.name=propi
 server.port=8080
 
 # Conexion a SQL Server local (copiar a src/main/resources/application.properties).
-# propi_app es el login tecnico creado en database/11_seguridad.sql: no tiene permisos
+# propi_app es el login tecnico creado en database/propi_despliegue.sql (seccion 14): no tiene permisos
 # sobre los datos, solo puede suplantar (EXECUTE AS USER) al usuario que inicio sesion.
 spring.datasource.url=jdbc:sqlserver://localhost:1433;databaseName=PropiFacturacion_AAMM;encrypt=true;trustServerCertificate=true;
 spring.datasource.username=propi_app
