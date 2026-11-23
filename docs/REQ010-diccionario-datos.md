@@ -1,6 +1,6 @@
 # REQ 010 · Diccionario de datos
 
-Base de datos **PropiFacturacion_AAMM** (SQL Server). El diccionario se genera desde la base: las descripciones están guardadas como propiedades extendidas (`MS_Description` y `NombreLogico`) por `database/15_diccionario.sql`, y se consultan con las vistas `dbo.v_diccionario_tablas`, `dbo.v_diccionario_columnas` y `dbo.v_diccionario_restricciones`. Si cambia una columna, basta volver a ejecutar las vistas.
+Base de datos **PropiFacturacion_AAMM** (SQL Server). El diccionario se genera desde la base: las descripciones están guardadas como propiedades extendidas (`MS_Description` y `NombreLogico`) por `database/propi_despliegue.sql (sección 13)`, y se consultan con las vistas `dbo.v_diccionario_tablas`, `dbo.v_diccionario_columnas` y `dbo.v_diccionario_restricciones`. Si cambia una columna, basta volver a ejecutar las vistas.
 
 ## Convenciones
 
@@ -476,4 +476,4 @@ Esquemas: **facturacion** (negocio, filegroup PRIMARY) y **auditoria** (bitácor
 
 ## Columnas cifradas
 
-`clientes.num_identificacion`, `clientes.des_correo` y `clientes.num_telefono` se guardan como `VARBINARY` cifrado con la llave simétrica `llave_clientes` (AES-256), protegida por el certificado `cert_clientes` y la master key de la base (`03_cifrado.sql`). Solo los procedimientos almacenados las descifran con `DECRYPTBYKEY`. Como el valor cifrado cambia en cada encriptación, la unicidad de la identificación se controla con `cod_hash_identificacion` (SHA2_256).
+`clientes.num_identificacion`, `clientes.des_correo` y `clientes.num_telefono` se guardan como `VARBINARY` cifrado con la llave simétrica `llave_clientes` (AES-256), protegida por el certificado `cert_clientes` y la master key de la base (`propi_despliegue.sql (sección 4)`). Solo los procedimientos almacenados las descifran con `DECRYPTBYKEY`. Como el valor cifrado cambia en cada encriptación, la unicidad de la identificación se controla con `cod_hash_identificacion` (SHA2_256).

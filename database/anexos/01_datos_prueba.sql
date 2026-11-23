@@ -1,5 +1,5 @@
 --Proyecto IF0010 - Sistema de Facturación Propi
---12 - Datos de prueba para la optimización (REQ 009)
+--Anexo 1 - Datos de prueba para la optimización (REQ 009)
 --Clientes, productos y notas: 1 000; facturas: 3 000 (~6 000 líneas); accesos: 1 000; auditoría: 20 000
 --Los catálogos no se multiplican porque son valores fijos
 --Los triggers se desactivan durante la carga. Se ejecuta una sola vez

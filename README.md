@@ -27,34 +27,38 @@ y Spring Boot se conecta por **TCP en el puerto 1433**.
 
 ## 2. Base de datos
 
-Base de datos: `PropiFacturacion_AAMM`. Ejecutar en SSMS, en orden:
+Base de datos: `PropiFacturacion_AAMM`. Toda la base está en un solo script,
+`database/propi_despliegue.sql`: abrirlo en SSMS conectado como sysadmin y ejecutarlo completo (F5).
 
-| Script | Contenido | REQ |
+| Sección | Contenido | REQ |
 |---|---|---|
-| `00_crear_bd.sql` | BD, filegroup `FG_AUDITORIA`, aislamiento snapshot, esquemas `facturacion` y `auditoria` | 001 |
-| `01_tablas.sql` | Catálogos, entidades y bitácoras con PK, FK, UNIQUE y CHECK. **Borra y recrea las tablas.** | 001 |
-| `02_catalogos.sql` | Datos de los catálogos | 001 |
-| `03_cifrado.sql` | Master key, certificado y llave simétrica AES_256 | 006 |
-| `04_procedimientos_clientes.sql` | CRUD de clientes con cifrado de datos sensibles | 002, 006 |
-| `05_procedimientos_impuestos_productos.sql` | CRUD de tipos de impuesto y productos | 002 |
-| `06_procedimientos_facturas_notas.sql` | Factura con detalle en una sola transacción, notas de crédito/débito | 002 |
-| `07_procedimientos_catalogos.sql` | Listas de catálogos para los formularios | 002 |
-| `08_procedimientos_acceso.sql` | Bitácora de accesos (ingreso y salida) | 003 |
-| `09_triggers.sql` | 3 triggers de auditoría por tabla | 005 |
-| `10_reportes.sql` | 4 reportes con aislamiento snapshot | 007 |
-| `11_seguridad.sql` | Logins, usuarios, roles y permisos GRANT / REVOKE / DENY | 003, 004, 008 |
-| `12_datos_prueba.sql` | Datos de prueba: 1 000 clientes, productos y notas, 3 000 facturas, 20 000 registros de auditoría | 009 |
-| `13_indices.sql` | Índice clustered de la bitácora y 7 nonclustered | 009 |
-| `14_medicion_rendimiento.sql` | `auditoria.pa_medir_rendimiento` y vista de comparación antes/después (activa Query Store) | 009 |
-| `15_diccionario.sql` | Descripciones como propiedades extendidas y vistas `dbo.v_diccionario_*` | 010 |
-| `16_respaldos.sql` | Modelo FULL y `dbo.pa_respaldar` (completo, diferencial, log y llaves) | 013 |
-| `17_programacion_respaldos.sql` | Trabajos del Agente SQL para los respaldos | 013 |
-| `18_restauracion_prueba.sql` | Restaura la cadena de respaldos en otra base y la verifica | 013 |
-| `19_logins_secundaria.sql` | Genera los logins con el mismo SID para la instancia secundaria (se ejecuta en la principal) | 014 |
-| `20_replica_secundaria.sql` | Log shipping: copia en STANDBY, aplicación de logs y conmutación (se ejecuta en la secundaria) | 014 |
+| 1 | BD, filegroup `FG_AUDITORIA`, aislamiento snapshot, esquemas `facturacion` y `auditoria` | 001 |
+| 2 | Catálogos, entidades y bitácoras con PK, FK, UNIQUE y CHECK. **Borra y recrea las tablas.** | 001 |
+| 3 | Datos de los catálogos | 001 |
+| 4 | Master key, certificado y llave simétrica AES_256 | 006 |
+| 5 a 8 | Procedimientos CRUD (clientes, impuestos, productos, facturas, notas y catálogos) | 002, 006 |
+| 9 | Bitácora de accesos (ingreso y salida) | 003 |
+| 10 | 3 triggers de auditoría por tabla | 005 |
+| 11 | 4 reportes con aislamiento snapshot | 007 |
+| 12 | Índice clustered de la bitácora y 7 nonclustered | 009 |
+| 13 | Diccionario: propiedades extendidas y vistas `dbo.v_diccionario_*` | 010 |
+| 14 | Logins, usuarios, roles y permisos GRANT / REVOKE / DENY | 003, 004, 008 |
+| 15 | Modelo FULL y `dbo.pa_respaldar` (completo, diferencial, log y llaves) | 013 |
+| 16 | Trabajos del Agente SQL para los respaldos | 013, 014 |
 
-Los scripts 12 a 14 son del REQ 009 y los 16 a 20 necesitan la carpeta `C:\PropiRespaldos\` con permiso de escritura
-para la cuenta del servicio de SQL Server. Los 17 y 20 usan el Agente SQL (SQL Server Developer o Standard).
+Las secciones 15 y 16 necesitan la carpeta `C:\PropiRespaldos\` con permiso de escritura para el servicio
+de SQL Server, y la 16 necesita el Agente SQL (SQL Server Developer o Standard).
+
+Scripts aparte, en `database/anexos/`:
+
+| Anexo | Contenido | REQ |
+|---|---|---|
+| `01_datos_prueba.sql` | 1 000 clientes, productos y notas, 3 000 facturas, 20 000 registros de auditoría | 009 |
+| `02_medicion_rendimiento.sql` | `auditoria.pa_medir_rendimiento` y vista de comparación antes/después | 009 |
+| `03_restauracion_prueba.sql` | Restaura la cadena de respaldos en otra base y la verifica | 013 |
+| `04_logins_secundaria.sql` | Genera los logins con el mismo SID para la secundaria (se ejecuta en la principal) | 014 |
+| `05_replica_secundaria.sql` | Log shipping: copia en STANDBY, aplicación de logs y conmutación (se ejecuta en la secundaria) | 014 |
+| `06_prueba_replica.ps1` | Prueba automatizada de RPO y RTO | 014 |
 
 ### Usuarios de prueba
 

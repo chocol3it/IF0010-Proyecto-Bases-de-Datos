@@ -53,7 +53,7 @@ Toda información nueva se clasifica al crearla; si no está clasificada, se tra
 
 ### 3.1 Implementado
 
-- **Acceso solo por procedimientos almacenados:** los roles `rol_digitador` y `rol_consulta` tienen `DENY SELECT, INSERT, UPDATE, DELETE` sobre los esquemas `facturacion` y `auditoria`; solo pueden ejecutar los procedimientos que su función necesita (`11_seguridad.sql`). La aplicación nunca envía SQL directo.
+- **Acceso solo por procedimientos almacenados:** los roles `rol_digitador` y `rol_consulta` tienen `DENY SELECT, INSERT, UPDATE, DELETE` sobre los esquemas `facturacion` y `auditoria`; solo pueden ejecutar los procedimientos que su función necesita (`propi_despliegue.sql (sección 14)`). La aplicación nunca envía SQL directo.
 - **Roles con mínimo privilegio** (REQ 004 y 008):
 
 | Rol | Puede | No puede |
@@ -67,7 +67,7 @@ Toda información nueva se clasifica al crearla; si no está clasificada, se tra
 ### 3.2 Reglas
 
 1. Ningún usuario de la aplicación recibe permisos directos sobre tablas; los permisos se otorgan a roles, nunca a usuarios individuales.
-2. Los cambios de permisos se hacen solo modificando `11_seguridad.sql` en el repositorio (con revisión de otro integrante) y ejecutándolo; así queda historial.
+2. Los cambios de permisos se hacen solo modificando `propi_despliegue.sql (sección 14)` en el repositorio (con revisión de otro integrante) y ejecutándolo; así queda historial.
 3. `sysadmin` se limita al DBA y a su suplente, con cuentas nominales (no se usa `sa`, que debe estar deshabilitado en producción).
 4. El acceso a los respaldos y a los archivos de llaves se limita a la cuenta del servicio de SQL Server y al DBA.
 
@@ -75,7 +75,7 @@ Toda información nueva se clasifica al crearla; si no está clasificada, se tra
 
 ### 4.1 Implementado
 
-- **Cifrado columnar AES-256** de identificación, correo y teléfono (`03_cifrado.sql`, REQ 006), con la jerarquía: Service Master Key → Database Master Key → certificado `cert_clientes` → llave simétrica `llave_clientes`. Solo los procedimientos descifran con `DECRYPTBYKEY`.
+- **Cifrado columnar AES-256** de identificación, correo y teléfono (`propi_despliegue.sql (sección 4)`, REQ 006), con la jerarquía: Service Master Key → Database Master Key → certificado `cert_clientes` → llave simétrica `llave_clientes`. Solo los procedimientos descifran con `DECRYPTBYKEY`.
 - **Hash SHA2_256** de la identificación para validar duplicados sin descifrar.
 - **Bitácoras separadas** en el filegroup `FG_AUDITORIA`.
 
@@ -84,7 +84,7 @@ Toda información nueva se clasifica al crearla; si no está clasificada, se tra
 | Elemento | Custodio | Respaldo | Rotación |
 |---|---|---|---|
 | Service Master Key (instancia) | DBA | `BACKUP SERVICE MASTER KEY` al instalar y tras cambiar la cuenta del servicio | No se rota salvo compromiso |
-| Database Master Key | DBA | `pa_respaldar 'LLAVES'` mensual y tras cualquier cambio (`17_programacion_respaldos.sql`) | Anual, con `ALTER MASTER KEY REGENERATE` |
+| Database Master Key | DBA | `pa_respaldar 'LLAVES'` mensual y tras cualquier cambio (`propi_despliegue.sql (sección 16)`) | Anual, con `ALTER MASTER KEY REGENERATE` |
 | Certificado `cert_clientes` y su llave privada | DBA | Igual que la master key | Anual: crear certificado nuevo, `ALTER SYMMETRIC KEY ... ADD ENCRYPTION BY CERTIFICATE` con el nuevo y luego `DROP ENCRYPTION` del anterior |
 | Llave simétrica `llave_clientes` | DBA | Viaja dentro de la base | Si se compromete: crear una nueva, volver a cifrar las columnas y borrar la anterior |
 | Contraseñas de la master key y de los archivos de llaves | Líder de TI | Gestor de contraseñas de la empresa y sobre sellado en caja fuerte | Al rotar la llave y cuando sale una persona que las conocía |
@@ -93,7 +93,7 @@ Reglas:
 
 1. Los archivos de llaves se guardan separados de los respaldos de la base en la copia fuera del sitio: quien obtenga un respaldo no debe obtener también la llave.
 2. Ninguna contraseña de llaves se escribe en el repositorio en producción; los scripts del proyecto usan contraseñas de ejemplo que se cambian al instalar.
-3. Toda rotación se prueba primero en una base restaurada (`18_restauracion_prueba.sql`).
+3. Toda rotación se prueba primero en una base restaurada (`anexos/03_restauracion_prueba.sql`).
 
 ### 4.3 Para producción
 
@@ -188,7 +188,7 @@ Reglas:
 ## 8. Otros controles
 
 - **Desarrollo:** cambios por commits en el repositorio, sin credenciales reales en el código (`application.properties` está en `.gitignore`), revisión de otro integrante antes de aplicar scripts en producción.
-- **Ambientes separados:** desarrollo y pruebas usan datos de prueba (`12_datos_prueba.sql`), nunca copias de datos reales sin enmascarar.
+- **Ambientes separados:** desarrollo y pruebas usan datos de prueba (`anexos/01_datos_prueba.sql`), nunca copias de datos reales sin enmascarar.
 - **Actualizaciones:** parches de seguridad de Windows y SQL Server mensuales, probados primero en la instancia secundaria.
 - **Respaldos y continuidad:** ver DRP (REQ 013), BCP (REQ 011) y réplica (REQ 014).
 

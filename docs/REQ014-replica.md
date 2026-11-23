@@ -42,11 +42,11 @@ Requisitos: dos instancias de SQL Server Developer (Express no trae el Agente), 
 | Paso | Dónde | Qué |
 |---|---|---|
 | 1 | Principal | Scripts `00` a `11` (y opcionalmente `12` a `15`) |
-| 2 | Principal | `16_respaldos.sql`: modelo FULL y primer respaldo completo, diferencial, de log y de llaves |
-| 3 | Principal | `17_programacion_respaldos.sql`: trabajos del Agente, entre ellos el log cada 30 s |
-| 4 | Principal | `19_logins_secundaria.sql`: copiar las sentencias `CREATE LOGIN` que devuelve |
+| 2 | Principal | `propi_despliegue.sql (sección 15)`: modelo FULL y primer respaldo completo, diferencial, de log y de llaves |
+| 3 | Principal | `propi_despliegue.sql (sección 16)`: trabajos del Agente, entre ellos el log cada 30 s |
+| 4 | Principal | `anexos/04_logins_secundaria.sql`: copiar las sentencias `CREATE LOGIN` que devuelve |
 | 5 | Secundaria | Ejecutar esas sentencias: crea `propi_admin`, `propi_digitador`, `propi_consulta` y `propi_app` con el mismo SID y la misma contraseña |
-| 6 | Secundaria | `20_replica_secundaria.sql`: crea los procedimientos en `master`, el trabajo de cada 15 s y restaura la copia inicial en STANDBY |
+| 6 | Secundaria | `anexos/05_replica_secundaria.sql`: crea los procedimientos en `master`, el trabajo de cada 15 s y restaura la copia inicial en STANDBY |
 | 7 | Ambas | Iniciar el servicio **Agente SQL Server** y dejarlo en inicio automático |
 
 Comprobación en la secundaria:
@@ -75,7 +75,7 @@ Logins con el mismo SID en las dos instancias (resultado real):
 | 2 | DBA | En la secundaria: `EXEC master.dbo.pa_replica_activar;` (aplica los últimos logs, `RECOVERY`, protege la master key con la llave de servicio de este servidor, asigna la base por defecto a los logins y desactiva el trabajo de aplicar logs) | < 5 s |
 | 3 | Backend | Cambiar `spring.datasource.url` a la secundaria y reiniciar el backend | 1 min |
 | 4 | Soporte | Iniciar sesión y registrar una factura de prueba | 1 min |
-| 5 | DBA | Crear en la secundaria los trabajos de respaldo (`17_programacion_respaldos.sql`), que ahora es la principal | Después de volver a operar |
+| 5 | DBA | Crear en la secundaria los trabajos de respaldo (`propi_despliegue.sql (sección 16)`), que ahora es la principal | Después de volver a operar |
 
 Ejemplo de cadena de conexión hacia la secundaria (con TCP habilitado en esa instancia, en el puerto 1434):
 
@@ -97,13 +97,13 @@ Luego `pa_replica_activar` en la secundaria aplica ese último log y no se pierd
 
 ### 5.3 Retorno
 
-Cuando la principal se repara: se borra su copia de la base, se ejecuta `20_replica_secundaria.sql` en ella (ahora como secundaria) y, en una ventana de mantenimiento, se hace un cambio planeado (5.2) en sentido contrario.
+Cuando la principal se repara: se borra su copia de la base, se ejecuta `anexos/05_replica_secundaria.sql` en ella (ahora como secundaria) y, en una ventana de mantenimiento, se hace un cambio planeado (5.2) en sentido contrario.
 
 ## 6. Prueba de RPO y RTO
 
 ### 6.1 Método
 
-`database/21_prueba_replica.ps1` automatiza la demostración:
+`database/anexos/06_prueba_replica.ps1` automatiza la demostración:
 
 1. Inserta un registro por segundo en la principal (`auditoria.bitacora_acceso`).
 2. Hace el papel de los trabajos del Agente: respaldo de log cada 30 s en la principal y aplicación de logs cada 15 s en la secundaria.
@@ -144,7 +144,7 @@ Se usó este script en lugar de los trabajos del Agente porque en el equipo de p
 ## 7. Detalles propios de Propi
 
 - **Cifrado:** la master key viaja con la base pero está protegida por la llave de servicio de la principal. `pa_replica_activar` la abre con su contraseña y ejecuta `ALTER MASTER KEY ADD ENCRYPTION BY SERVICE MASTER KEY`; desde ahí los procedimientos de clientes descifran sin cambios. El mismo paso se comprobó en la instancia secundaria durante la prueba de restauración del REQ 013, donde los datos de clientes se leyeron descifrados.
-- **Logins:** `19_logins_secundaria.sql` genera `CREATE LOGIN ... WITH PASSWORD = <hash> HASHED, SID = <sid>`. Con el mismo SID, los usuarios de la base quedan enlazados sin `ALTER USER ... WITH LOGIN`, y con el mismo hash los usuarios siguen usando su contraseña.
+- **Logins:** `anexos/04_logins_secundaria.sql` genera `CREATE LOGIN ... WITH PASSWORD = <hash> HASHED, SID = <sid>`. Con el mismo SID, los usuarios de la base quedan enlazados sin `ALTER USER ... WITH LOGIN`, y con el mismo hash los usuarios siguen usando su contraseña.
 - **Auditoría:** la bitácora de auditoría y la de accesos van dentro de la base, así que la secundaria tiene la misma historia.
 - **Respaldos:** los archivos de log que alimentan la réplica son los mismos del DRP; no hay dos cadenas de log distintas que se interfieran.
 

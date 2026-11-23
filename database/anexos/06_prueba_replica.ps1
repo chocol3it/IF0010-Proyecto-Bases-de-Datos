@@ -1,10 +1,10 @@
 ﻿#Proyecto IF0010 - Sistema de Facturación Propi
-#21 - Prueba de RPO y RTO de la réplica (REQ 014)
-#Requisitos: 16_respaldos.sql en la principal y 20_replica_secundaria.sql en la secundaria
+#Anexo 6 - Prueba de RPO y RTO de la réplica (REQ 014)
+#Requisitos: propi_despliegue.sql (sección 15) en la principal y anexos/05_replica_secundaria.sql en la secundaria
 #Hace el papel de los trabajos del Agente (log cada 30 s en la principal, aplicar logs cada 15 s en la secundaria),
 #inserta un registro por segundo en la principal, mide cuánto tarda en verse en la secundaria,
 #pone la principal fuera de línea, activa la secundaria y mide el RTO y los datos perdidos
-#Uso: powershell -ExecutionPolicy Bypass -File 21_prueba_replica.ps1 -Segundos 200
+#Uso: powershell -ExecutionPolicy Bypass -File anexos/06_prueba_replica.ps1 -Segundos 200
 #OJO: deja la base principal OFFLINE; para volver: ALTER DATABASE PropiFacturacion_AAMM SET ONLINE;
 param([int]$Segundos = 200,
       [string]$Principal = 'localhost\SQLSERVERPT',

@@ -1,5 +1,5 @@
 --Proyecto IF0010 - Sistema de Facturación Propi
---18 - Restauración de prueba (REQ 013)
+--Anexo 3 - Restauración de prueba (REQ 013)
 --Restaura la cadena de respaldos más reciente de la carpeta en una base con otro nombre:
 --completo -> diferencial -> logs (WITH NORECOVERY) -> RECOVERY, luego las llaves y la verificación
 --Sirve igual en la misma instancia o en otro servidor que vea la carpeta de respaldos

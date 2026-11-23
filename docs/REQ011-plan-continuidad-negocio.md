@@ -91,7 +91,7 @@ Cada suplente tiene acceso a la documentación (README, DRP y este plan), a las 
 Objetivo: RTO ≤ 5 minutos, RPO ≤ 60 segundos.
 
 1. El DBA confirma que la instancia principal no responde.
-2. Ejecuta `EXEC master.dbo.pa_replica_activar;` en la instancia secundaria. Aplica los últimos respaldos de log, deja la base en lectura y escritura y vuelve a proteger la master key (`20_replica_secundaria.sql`).
+2. Ejecuta `EXEC master.dbo.pa_replica_activar;` en la instancia secundaria. Aplica los últimos respaldos de log, deja la base en lectura y escritura y vuelve a proteger la master key (`anexos/05_replica_secundaria.sql`).
 3. El desarrollador backend cambia `spring.datasource.url` a la instancia secundaria y reinicia el backend.
 4. Soporte confirma con un usuario que puede iniciar sesión y emitir una factura.
 5. Pérdida máxima: lo registrado después del último respaldo de log (cada 30 segundos).
@@ -102,7 +102,7 @@ La réplica no protege en estos casos, porque copia también el daño. Se restau
 
 1. Se detiene el ingreso de datos (se desactiva el login de la aplicación o se pone la base en modo restringido).
 2. Se identifica el momento previo al daño con la bitácora de auditoría (`facturacion.pa_rpt_auditoria`).
-3. El DBA restaura completo + diferencial + logs hasta ese momento (`STOPAT`) en una base nueva con `18_restauracion_prueba.sql` y verifica los datos.
+3. El DBA restaura completo + diferencial + logs hasta ese momento (`STOPAT`) en una base nueva con `anexos/03_restauracion_prueba.sql` y verifica los datos.
 4. Se reemplaza la base dañada o se copian los registros afectados.
 5. En ransomware: antes de restaurar, el oficial de seguridad aísla el servidor y se restaura en un servidor limpio; se usan las copias fuera del sitio si las locales también fueron afectadas.
 
@@ -118,7 +118,7 @@ Sin la master key y el certificado `cert_clientes`, la identificación, el corre
 
 1. Se instala SQL Server en el sitio alterno (otra oficina o un servidor en la nube) con la guía del README.
 2. Se restauran la base y las llaves desde la copia fuera del sitio (DRP, REQ 013).
-3. Se crean los logins con el script `19_logins_secundaria.sql` (mismos SID).
+3. Se crean los logins con el script `anexos/04_logins_secundaria.sql` (mismos SID).
 4. Se despliega el backend y el frontend desde el repositorio de GitHub.
 5. RTO de este escenario: hasta 8 horas. RPO: el de la última copia fuera del sitio (diaria, máximo 24 horas; con los logs sincronizados a la nube, 15 minutos).
 
@@ -167,7 +167,7 @@ Se mantiene en el gestor de contraseñas y en una copia impresa en la caja fuert
 | Prueba | Frecuencia | Qué se mide | Responsable |
 |---|---|---|---|
 | Verificación de respaldos (`RESTORE VERIFYONLY` automático) | Cada respaldo | Que el archivo se pueda leer | DBA |
-| Restauración en base de prueba (`18_restauracion_prueba.sql`) | Mensual | Que la cadena completa se restaura y los datos cifrados se leen | DBA |
+| Restauración en base de prueba (`anexos/03_restauracion_prueba.sql`) | Mensual | Que la cadena completa se restaura y los datos cifrados se leen | DBA |
 | Revisión de latencia de la réplica | Semanal | Que la secundaria no se atrase más de 60 segundos | DBA |
 | Simulacro de conmutación a la secundaria | Cada semestre | RTO ≤ 5 min y RPO ≤ 60 s reales | DBA, backend y soporte |
 | Restauración de llaves desde archivo | Anual | Que los archivos y contraseñas de las llaves funcionan | DBA |

@@ -1,6 +1,18 @@
 --Proyecto IF0010 - Sistema de Facturación Propi
---14 - Medición de rendimiento de los procedimientos (REQ 009)
---Uso: EXEC auditoria.pa_medir_rendimiento 'ANTES'; ejecutar 13_indices.sql; EXEC auditoria.pa_medir_rendimiento 'DESPUES';
+--Anexo 2 - Medición de rendimiento de los procedimientos (REQ 009)
+--Uso (propi_despliegue.sql ya crea los índices en su sección 12):
+--  1. Para medir el "antes", quitar los índices:
+--     DROP INDEX IF EXISTS IX_bitacora_auditoria_fec_registro ON auditoria.bitacora_auditoria;
+--     DROP INDEX IF EXISTS IX_clientes_fec_registro ON facturacion.clientes;
+--     DROP INDEX IF EXISTS IX_facturas_fec_factura ON facturacion.facturas;
+--     DROP INDEX IF EXISTS IX_facturas_cod_cliente ON facturacion.facturas;
+--     DROP INDEX IF EXISTS IX_facturas_detalle_cod_factura ON facturacion.facturas_detalle;
+--     DROP INDEX IF EXISTS IX_facturas_detalle_cod_producto ON facturacion.facturas_detalle;
+--     DROP INDEX IF EXISTS IX_notas_cod_factura ON facturacion.notas_credito_debito;
+--     DROP INDEX IF EXISTS IX_productos_cod_tipo_impuesto ON facturacion.productos_servicios;
+--  2. EXEC auditoria.pa_medir_rendimiento 'ANTES';
+--  3. Volver a crear los índices: ejecutar la sección 12 de propi_despliegue.sql
+--  4. EXEC auditoria.pa_medir_rendimiento 'DESPUES';
 --Resultado: SELECT * FROM auditoria.v_comparacion_rendimiento;
 --Las pruebas de escritura se revierten, no cambian los datos
 USE PropiFacturacion_AAMM;

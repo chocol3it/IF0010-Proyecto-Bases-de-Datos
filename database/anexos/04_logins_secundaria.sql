@@ -1,10 +1,10 @@
 --Proyecto IF0010 - Sistema de Facturación Propi
---19 - Logins para la instancia secundaria (REQ 014)
+--Anexo 4 - Logins para la instancia secundaria (REQ 014)
 --Se ejecuta en la PRINCIPAL. Genera los CREATE LOGIN de la aplicación con el mismo SID y la
 --misma contraseña (en hash), para ejecutarlos luego en la SECUNDARIA.
 --Los logins viven en el servidor y no viajan con la base: si el SID no coincide, los usuarios
 --de la base quedan huérfanos y nadie puede entrar después de la conmutación
---La base por defecto se asigna al activar la secundaria (20_replica_secundaria.sql)
+--La base por defecto se asigna al activar la secundaria (anexos/05_replica_secundaria.sql)
 USE master;
 GO
 SET NOCOUNT ON;

@@ -3,11 +3,11 @@
 ## Entorno y método
 
 - **Servidor:** SQL Server 2025 Developer (17.0.1000.7), instancia local, 12 núcleos.
-- **Datos** (`12_datos_prueba.sql`): 1 000 clientes cifrados, 1 000 productos, 3 000 facturas, 6 000 líneas de detalle, 1 000 notas, 1 000 accesos y 20 000 registros de auditoría repartidos en 2 años.
-- **Medición** (`14_medicion_rendimiento.sql`): `auditoria.pa_medir_rendimiento` ejecuta 37 pruebas sobre los procedimientos. Cada prueba corre 1 vez de calentamiento y 10 veces medidas; se guarda el promedio de tiempo, CPU y lecturas lógicas. Las pruebas de escritura se revierten con ROLLBACK.
+- **Datos** (`anexos/01_datos_prueba.sql`): 1 000 clientes cifrados, 1 000 productos, 3 000 facturas, 6 000 líneas de detalle, 1 000 notas, 1 000 accesos y 20 000 registros de auditoría repartidos en 2 años.
+- **Medición** (`anexos/02_medicion_rendimiento.sql`): `auditoria.pa_medir_rendimiento` ejecuta 37 pruebas sobre los procedimientos. Cada prueba corre 1 vez de calentamiento y 10 veces medidas; se guarda el promedio de tiempo, CPU y lecturas lógicas. Las pruebas de escritura se revierten con ROLLBACK.
 - **Planes:** se toman de Query Store, que guarda el plan de cada consulta aunque el procedimiento abra la llave simétrica (esos planes no quedan en la caché).
 - **Métrica principal:** lecturas lógicas (páginas de 8 KB). El tiempo depende de la PC y varía entre corridas; las lecturas no.
-- **Secuencia:** `pa_medir_rendimiento 'ANTES'` → `13_indices.sql` → `pa_medir_rendimiento 'DESPUES'` → `SELECT * FROM auditoria.v_comparacion_rendimiento`.
+- **Secuencia:** `pa_medir_rendimiento 'ANTES'` → `propi_despliegue.sql (sección 12)` → `pa_medir_rendimiento 'DESPUES'` → `SELECT * FROM auditoria.v_comparacion_rendimiento`.
 
 ## Índices creados
 

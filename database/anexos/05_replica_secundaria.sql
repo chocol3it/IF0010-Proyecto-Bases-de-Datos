@@ -1,6 +1,6 @@
 --Proyecto IF0010 - Sistema de Facturación Propi
---20 - Base secundaria con log shipping (REQ 014)
---Se ejecuta en la instancia SECUNDARIA (SQL Server Developer), después de 19_logins_secundaria.sql
+--Anexo 5 - Base secundaria con log shipping (REQ 014)
+--Se ejecuta en la instancia SECUNDARIA (SQL Server Developer), después de anexos/04_logins_secundaria.sql
 --Funcionamiento:
 --  Principal:  el trabajo "Propi - Respaldo de log" (17) respalda el log cada 30 segundos en la carpeta compartida
 --  Secundaria: el trabajo "Propi - Aplicar logs de la réplica" restaura cada 15 segundos los logs nuevos

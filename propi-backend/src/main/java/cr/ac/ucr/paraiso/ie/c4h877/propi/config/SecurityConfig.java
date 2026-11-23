@@ -17,7 +17,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 // La API solo exige que el usuario haya iniciado sesión. Qué puede hacer cada
-// rol lo decide SQL Server con los permisos GRANT/DENY (database/11_seguridad.sql).
+// rol lo decide SQL Server con los permisos GRANT/DENY (database/propi_despliegue.sql (sección 14)).
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {

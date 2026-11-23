@@ -8,9 +8,9 @@ Scripts del proyecto:
 
 | Script | Qué hace |
 |---|---|
-| `database/16_respaldos.sql` | Pone la base en modelo de recuperación FULL, crea `dbo.pa_respaldar` (completo, diferencial, log y llaves) y hace el primer juego de respaldos |
-| `database/17_programacion_respaldos.sql` | Crea los trabajos del Agente SQL que programan los respaldos y la limpieza |
-| `database/18_restauracion_prueba.sql` | Restaura la cadena más reciente en una base con otro nombre (o en otro servidor) y la verifica |
+| `database/propi_despliegue.sql (sección 15)` | Pone la base en modelo de recuperación FULL, crea `dbo.pa_respaldar` (completo, diferencial, log y llaves) y hace el primer juego de respaldos |
+| `database/propi_despliegue.sql (sección 16)` | Crea los trabajos del Agente SQL que programan los respaldos y la limpieza |
+| `database/anexos/03_restauracion_prueba.sql` | Restaura la cadena más reciente en una base con otro nombre (o en otro servidor) y la verifica |
 
 ## 2. Objetivos de recuperación
 
@@ -29,8 +29,8 @@ Son los mismos valores del BCP (REQ 011) y del REQ 014.
 | 1 | Base `PropiFacturacion_AAMM` | Archivo de datos `.mdf` (filegroup PRIMARY, esquema `facturacion`), `PropiFacturacion_AAMM_auditoria.ndf` (filegroup FG_AUDITORIA, bitácoras) y log `.ldf` | Completo, diferencial y log |
 | 1 | Master key y certificado `cert_clientes` | Sin ellos no se leen la identificación, el correo ni el teléfono de los clientes | `pa_respaldar 'LLAVES'` (archivos `.key`, `.cer`, `.pvk` protegidos con contraseña) |
 | 1 | Servidor SQL Server (instancia principal) | SQL Server 2025 Developer, modo de autenticación mixto | Reinstalación; configuración documentada en el README |
-| 2 | Logins `propi_admin`, `propi_digitador`, `propi_consulta`, `propi_app` | Viven en `master`, no dentro de la base | `19_logins_secundaria.sql` genera los CREATE LOGIN con el mismo SID y hash |
-| 2 | Instancia secundaria | Copia en STANDBY mantenida por log shipping (REQ 014) | Se reconstruye con `20_replica_secundaria.sql` |
+| 2 | Logins `propi_admin`, `propi_digitador`, `propi_consulta`, `propi_app` | Viven en `master`, no dentro de la base | `anexos/04_logins_secundaria.sql` genera los CREATE LOGIN con el mismo SID y hash |
+| 2 | Instancia secundaria | Copia en STANDBY mantenida por log shipping (REQ 014) | Se reconstruye con `anexos/05_replica_secundaria.sql` |
 | 3 | Backend Spring Boot | Código en GitHub; `application.properties` con la conexión y el secreto JWT | Repositorio + copia del archivo de configuración en el gestor de contraseñas |
 | 3 | Frontend Angular | Código en GitHub | Repositorio |
 | 4 | Trabajos del Agente SQL | Programación de respaldos y de la réplica | Scripts 17 y 20 |
@@ -78,7 +78,7 @@ El trabajo **Propi - Limpieza de respaldos** borra cada día los `.bak` de más 
 
 ### 5.1 Restaurar la base (completo → diferencial → logs)
 
-`18_restauracion_prueba.sql` hace estos pasos automáticamente con los archivos de la carpeta. Paso a paso manual:
+`anexos/03_restauracion_prueba.sql` hace estos pasos automáticamente con los archivos de la carpeta. Paso a paso manual:
 
 ```sql
 -- 1. Si la base dañada todavía responde, respaldar el final del log para no perder nada
@@ -141,7 +141,7 @@ CREATE CERTIFICATE cert_clientes
 
 ### 5.3 Logins y verificación
 
-1. Crear los logins con el mismo SID: ejecutar `19_logins_secundaria.sql` en un servidor que los tenga (o tomar la salida guardada) y correr las sentencias en el servidor nuevo.
+1. Crear los logins con el mismo SID: ejecutar `anexos/04_logins_secundaria.sql` en un servidor que los tenga (o tomar la salida guardada) y correr las sentencias en el servidor nuevo.
 2. Verificar:
    - `DBCC CHECKDB` sin errores.
    - Cantidad de registros de las tablas principales igual a la esperada.
@@ -167,7 +167,7 @@ CREATE CERTIFICATE cert_clientes
 |---|---|---|
 | `RESTORE VERIFYONLY` de cada respaldo | Automática | `pa_respaldar` |
 | Revisión del historial de trabajos del Agente (que no haya fallos) | Diaria | DBA |
-| Restauración completa en base de prueba con `18_restauracion_prueba.sql` | Mensual | DBA |
+| Restauración completa en base de prueba con `anexos/03_restauracion_prueba.sql` | Mensual | DBA |
 | Restauración en otro servidor, incluidas las llaves desde archivo | Semestral, junto al simulacro del BCP | DBA |
 | Revisión de este plan | Semestral o tras un incidente | Líder de TI |
 
@@ -179,9 +179,9 @@ Ambiente: SQL Server 2025 Developer, instancias `SQLSERVERPT` (principal) y `SQL
 
 | Paso | Resultado |
 |---|---|
-| `16_respaldos.sql` | Respaldo completo de 19,1 MB (2 233 páginas en 0,17 s), diferencial de 2,1 MB, log y llaves; los tres verificados con `RESTORE VERIFYONLY` |
+| `propi_despliegue.sql (sección 15)` | Respaldo completo de 19,1 MB (2 233 páginas en 0,17 s), diferencial de 2,1 MB, log y llaves; los tres verificados con `RESTORE VERIFYONLY` |
 | Cambio después de los respaldos | Se insertó un registro de prueba en `bitacora_acceso` y se respaldó el log |
-| `18_restauracion_prueba.sql` en la misma instancia | Completo + diferencial + 2 logs restaurados en `PropiFacturacion_AAMM_prueba`; `DBCC CHECKDB` sin errores; 1 000 clientes, 3 000 facturas, 6 000 líneas, 1 000 notas y 20 000 registros de auditoría; datos cifrados legibles; el registro insertado después del diferencial está presente |
-| `18_restauracion_prueba.sql` en la instancia `SQLSERVERSJ` | Mismo resultado. La master key se abrió con su contraseña y se protegió con la Service Master Key del nuevo servidor; los datos de clientes se descifraron correctamente |
+| `anexos/03_restauracion_prueba.sql` en la misma instancia | Completo + diferencial + 2 logs restaurados en `PropiFacturacion_AAMM_prueba`; `DBCC CHECKDB` sin errores; 1 000 clientes, 3 000 facturas, 6 000 líneas, 1 000 notas y 20 000 registros de auditoría; datos cifrados legibles; el registro insertado después del diferencial está presente |
+| `anexos/03_restauracion_prueba.sql` en la instancia `SQLSERVERSJ` | Mismo resultado. La master key se abrió con su contraseña y se protegió con la Service Master Key del nuevo servidor; los datos de clientes se descifraron correctamente |
 | Restauración de la master key desde el archivo `.key` | `RESTORE MASTER KEY ... FORCE` funcionó en la instancia que creó el archivo. En la otra instancia falló por permisos del archivo (ver nota de la sección 5.2) |
 | Tiempo total de la restauración | Menos de 2 segundos con este volumen de datos |
