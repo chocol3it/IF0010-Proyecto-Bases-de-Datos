@@ -73,6 +73,7 @@ Scripts aparte, en `database/anexos/`:
 | `04_logins_secundaria.sql` | Genera los logins con el mismo SID para la secundaria (se ejecuta en la principal) | 014 |
 | `05_replica_secundaria.sql` | Log shipping: copia en STANDBY, aplicación de logs y conmutación (se ejecuta en la secundaria) | 014 |
 | `06_prueba_replica.ps1` | Prueba automatizada de RPO y RTO | 014 |
+| `07_demostracion.sql` | Consultas para demostrar cada requerimiento en SSMS durante la defensa | 001 a 014 |
 
 ### Usuarios de prueba
 
