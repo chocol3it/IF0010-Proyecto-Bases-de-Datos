@@ -1,16 +1,15 @@
 --Proyecto IF0010 - Sistema de Facturación Propi
---Anexo 7 - Demostración de los requerimientos en SSMS (defensa)
+--Anexo 7 - Demostración en SSMS de lo que no se ve desde la aplicación (defensa)
 --Uso: conectarse como sysadmin a la principal (AMS-LAPTOP\SQLUCR), seleccionar UN bloque y ejecutarlo con F5.
---     Los bloques del REQ 014 marcados "SECUNDARIA" se ejecutan conectado a AMS-LAPTOP\SQLSERVERSJ.
---Los bloques con EXECUTE AS terminan en REVERT. Si uno se corta antes por un error,
---ejecutar REVERT; y confirmar con SELECT SUSER_SNAME(); que vuelve a ser el usuario de Windows.
+--     El bloque del REQ 014 marcado "SECUNDARIA" se ejecuta conectado a AMS-LAPTOP\SQLSERVERSJ.
+--Si un bloque con EXECUTE AS se corta antes del REVERT, ejecutar REVERT; y revisar con SELECT SUSER_SNAME();
 USE PropiFacturacion_AAMM;
 GO
 
 /* ========================================================================
-   REQ 001 - Modelo: esquemas, tablas, filegroups y relaciones
+   REQ 001 - Estructura física: esquemas, filegroups, archivos y relaciones
    ======================================================================== */
--- 15 tablas en dos esquemas; las bitácoras viven en el filegroup FG_AUDITORIA
+-- Las bitácoras (esquema auditoria) están en su propio filegroup: FG_AUDITORIA
 SELECT s.name AS esquema, t.name AS tabla, fg.name AS filegroup
 FROM sys.tables t
 JOIN sys.schemas s ON s.schema_id = t.schema_id
@@ -19,104 +18,74 @@ JOIN sys.filegroups fg ON fg.data_space_id = i.data_space_id
 WHERE s.name IN ('facturacion', 'auditoria')
 ORDER BY s.name, t.name;
 
--- Llaves foráneas (las relaciones del modelo)
-SELECT OBJECT_NAME(fk.parent_object_id) AS tabla, fk.name AS llave_foranea,
-       OBJECT_NAME(fk.referenced_object_id) AS referencia
-FROM sys.foreign_keys fk
-ORDER BY tabla;
-
--- Archivos físicos de la base (.mdf, .ndf de auditoría y .ldf)
+-- Archivos físicos: datos (.mdf), bitácoras (.ndf) y log (.ldf)
 SELECT name, type_desc, physical_name FROM sys.database_files;
+
+-- Relaciones del modelo (llaves foráneas)
+SELECT OBJECT_NAME(parent_object_id) AS tabla, name AS llave_foranea,
+       OBJECT_NAME(referenced_object_id) AS referencia
+FROM sys.foreign_keys ORDER BY tabla;
 GO
 
 /* ========================================================================
-   REQ 003 - Ingreso: el rol lo decide SQL Server y queda en la bitácora
+   REQ 003 - Bitácora de accesos (cada ingreso y salida de la aplicación)
    ======================================================================== */
--- Logins de SQL Server (no hay tabla de usuarios propia)
-SELECT name, type_desc, is_disabled, is_policy_checked FROM sys.sql_logins WHERE name LIKE 'propi[_]%';
-
--- Lo que hace el backend al iniciar sesión: se ejecuta como el login y registra el ingreso
-EXECUTE AS LOGIN = 'propi_admin';
-EXEC auditoria.pa_acceso_ingresar @nom_terminal = 'PC-DEFENSA', @des_direccion_ip = '127.0.0.1';
-REVERT;
-
-SELECT TOP 5 * FROM auditoria.bitacora_acceso ORDER BY cod_acceso DESC;
+SELECT TOP 10 cod_acceso, nom_usuario, nom_terminal, des_direccion_ip, fec_ingreso, fec_salida
+FROM auditoria.bitacora_acceso ORDER BY cod_acceso DESC;
 GO
 
 /* ========================================================================
-   REQ 004 - Roles y sus miembros
+   REQ 004 y 008 - Roles, permisos y DENY aplicados por SQL Server
    ======================================================================== */
+-- Usuarios de cada rol
 SELECT r.name AS rol, u.name AS usuario
 FROM sys.database_role_members rm
 JOIN sys.database_principals r ON r.principal_id = rm.role_principal_id
 JOIN sys.database_principals u ON u.principal_id = rm.member_principal_id
-WHERE r.name LIKE 'rol[_]%'
-ORDER BY r.name;
+WHERE r.name LIKE 'rol[_]%' ORDER BY r.name;
+
+-- GRANT y DENY de cada rol, e IMPERSONATE del login técnico propi_app
+SELECT pr.name AS rol, pe.state_desc AS estado, pe.permission_name AS permiso,
+       CASE pe.class WHEN 3 THEN SCHEMA_NAME(pe.major_id)
+                     WHEN 1 THEN OBJECT_SCHEMA_NAME(pe.major_id) + '.' + OBJECT_NAME(pe.major_id)
+                     WHEN 4 THEN USER_NAME(pe.major_id)
+                     ELSE pe.class_desc END AS sobre
+FROM sys.database_permissions pe
+JOIN sys.database_principals pr ON pr.principal_id = pe.grantee_principal_id
+WHERE pr.name LIKE 'rol[_]%' OR pr.name = 'propi_app'
+ORDER BY pr.name, pe.state_desc, sobre;
 GO
 
-/* ========================================================================
-   REQ 002 - CRUD por procedimientos (como lo hace la aplicación)
-   ======================================================================== */
--- El backend fija la sesión y ejecuta como el usuario que inició sesión
-DECLARE @sesion INT = (SELECT MAX(cod_acceso) FROM auditoria.bitacora_acceso WHERE nom_usuario = 'propi_admin');
-EXEC sp_set_session_context @key = N'cod_sesion', @value = @sesion;
-EXECUTE AS USER = 'propi_admin';
-
--- Factura con dos líneas en JSON: encabezado, líneas y totales en una sola transacción
-EXEC facturacion.pa_facturas_insertar
-     @cod_cliente = 1, @cod_condicion_venta = 1, @cod_medio_pago = 5, @cod_moneda = 1,
-     @mon_tipo_cambio = 1, @des_observaciones = 'Factura de la defensa',
-     @detalle = N'[{"codProducto":2,"canCantidad":2},{"codProducto":3,"canCantidad":1}]';
-REVERT;
-
-DECLARE @factura INT = (SELECT MAX(cod_factura) FROM facturacion.facturas);
-EXECUTE AS USER = 'propi_admin';
-EXEC facturacion.pa_facturas_consultar @factura;
-EXEC facturacion.pa_facturas_detalle_consultar @factura;
-
--- Nota de crédito válida
-EXEC facturacion.pa_notas_insertar @factura, 1, 'Descuento por pronto pago', 1000;
-EXEC facturacion.pa_notas_consultar NULL, @factura;
+-- La base niega aunque se salte la aplicación: las dos primeras dan error 229
+EXECUTE AS USER = 'propi_digitador';
+SELECT TOP 1 * FROM facturacion.clientes;    -- DENY SELECT sobre el esquema
+EXEC facturacion.pa_facturas_eliminar 1;     -- DENY EXECUTE sobre el procedimiento
+EXEC facturacion.pa_clientes_consultar 1;    -- funciona: encadenamiento de propiedad
 REVERT;
 GO
 
--- Regla de negocio: una nota de crédito mayor que el total se rechaza (THROW 50003)
-DECLARE @factura INT = (SELECT MAX(cod_factura) FROM facturacion.facturas);
-EXEC facturacion.pa_notas_insertar @factura, 1, 'Nota excesiva', 99999999;
-GO
-
--- Regla de negocio: una factura con notas no se puede eliminar (THROW 50003)
-DECLARE @factura INT = (SELECT MAX(cod_factura) FROM facturacion.facturas);
-EXEC facturacion.pa_facturas_eliminar @factura;
-GO
-
 /* ========================================================================
-   REQ 005 - Triggers de auditoría (3 por tabla) y bitácora
+   REQ 005 - Triggers de auditoría: 3 por tabla
    ======================================================================== */
-SELECT OBJECT_NAME(parent_id) AS tabla, COUNT(*) AS triggers
+SELECT OBJECT_NAME(parent_id) AS tabla, COUNT(*) AS triggers,
+       STRING_AGG(name, ', ') AS nombres
 FROM sys.triggers WHERE parent_class = 1
 GROUP BY OBJECT_NAME(parent_id) ORDER BY tabla;
 
--- Una modificación hecha como propi_admin queda con su usuario, su sesión y los datos de antes y después
-DECLARE @sesion INT = (SELECT MAX(cod_acceso) FROM auditoria.bitacora_acceso WHERE nom_usuario = 'propi_admin');
-EXEC sp_set_session_context @key = N'cod_sesion', @value = @sesion;
-DECLARE @factura INT = (SELECT MAX(cod_factura) FROM facturacion.facturas);
-EXECUTE AS USER = 'propi_admin';
-EXEC facturacion.pa_facturas_actualizar @factura, 2, 3, 'Observación modificada en la defensa';
-REVERT;
-
-SELECT TOP 6 fec_registro, ind_accion, cod_usuario, cod_sesion_usuario, cod_tabla, cod_llave, des_datos
+-- Lo que escribieron los triggers con los cambios hechos en la aplicación
+SELECT TOP 6 fec_registro, cod_guid, ind_accion, cod_usuario, cod_sesion_usuario, cod_tabla, cod_llave, des_datos
 FROM auditoria.bitacora_auditoria ORDER BY fec_registro DESC;
 GO
 
 /* ========================================================================
-   REQ 006 - Cifrado de la identificación, el correo y el teléfono
+   REQ 006 - Cifrado de identificación, correo y teléfono
    ======================================================================== */
-SELECT name, algorithm_desc, key_length FROM sys.symmetric_keys WHERE name = 'llave_clientes';
+-- Jerarquía de llaves: master key, certificado y llave simétrica AES_256
+SELECT name, algorithm_desc FROM sys.symmetric_keys;
 SELECT name, pvt_key_encryption_type_desc FROM sys.certificates WHERE name = 'cert_clientes';
 
--- Así se guarda en la tabla: solo bytes
-SELECT TOP 3 cod_cliente, nom_cliente, num_identificacion, des_correo, cod_hash_identificacion
+-- Así se guarda en la tabla: solo bytes (el último es el cliente creado en la aplicación)
+SELECT TOP 3 cod_cliente, nom_cliente, num_identificacion, des_correo, num_telefono, cod_hash_identificacion
 FROM facturacion.clientes ORDER BY cod_cliente DESC;
 
 -- Así lo lee el procedimiento con la llave abierta
@@ -130,39 +99,9 @@ CLOSE SYMMETRIC KEY llave_clientes;
 GO
 
 /* ========================================================================
-   REQ 007 - Reportes con aislamiento SNAPSHOT (ejecutados como propi_consulta)
+   REQ 007 - Aislamiento SNAPSHOT habilitado para los reportes
    ======================================================================== */
 SELECT name, snapshot_isolation_state_desc FROM sys.databases WHERE name = DB_NAME();
-
-DECLARE @desde DATE = DATEADD(DAY, -30, GETDATE()), @hasta DATE = GETDATE();
-EXECUTE AS USER = 'propi_consulta';
-EXEC facturacion.pa_rpt_clientes @desde, @hasta, NULL;
-EXEC facturacion.pa_rpt_facturas @desde, @hasta;
-EXEC facturacion.pa_rpt_auditoria @desde, @hasta, 'propi_admin';
-EXEC facturacion.pa_rpt_seguridad NULL;
-REVERT;
-GO
-
-/* ========================================================================
-   REQ 008 - GRANT, REVOKE y DENY
-   ======================================================================== */
--- Permisos por rol: GRANT de procedimientos y DENY sobre los esquemas
-SELECT pr.name AS rol, pe.state_desc AS estado, pe.permission_name AS permiso,
-       CASE pe.class WHEN 3 THEN SCHEMA_NAME(pe.major_id)
-                     WHEN 1 THEN OBJECT_SCHEMA_NAME(pe.major_id) + '.' + OBJECT_NAME(pe.major_id)
-                     WHEN 4 THEN USER_NAME(pe.major_id)
-                     ELSE pe.class_desc END AS sobre
-FROM sys.database_permissions pe
-JOIN sys.database_principals pr ON pr.principal_id = pe.grantee_principal_id
-WHERE pr.name LIKE 'rol[_]%' OR pr.name = 'propi_app'
-ORDER BY pr.name, pe.state_desc, sobre;
-
--- El digitador no puede leer la tabla ni eliminar: error 229 aunque se salte la aplicación
-EXECUTE AS USER = 'propi_digitador';
-SELECT TOP 1 * FROM facturacion.clientes;              -- DENY SELECT sobre el esquema
-EXEC facturacion.pa_facturas_eliminar 1;               -- DENY EXECUTE sobre el procedimiento
-EXEC facturacion.pa_clientes_consultar 1;              -- funciona: encadenamiento de propiedad
-REVERT;
 GO
 
 /* ========================================================================
@@ -241,12 +180,12 @@ JOIN msdb.dbo.backupset bs ON bs.backup_set_id = rh.backup_set_id
 WHERE rh.destination_database_name = 'PropiFacturacion_AAMM'
 ORDER BY rh.restore_history_id DESC;
 
--- La factura de la defensa ya llegó a la secundaria
-SELECT TOP 3 cod_factura, fec_factura, des_observaciones
-FROM PropiFacturacion_AAMM.facturacion.facturas ORDER BY cod_factura DESC;
+-- El cliente creado en la aplicación ya llegó a la secundaria
+SELECT TOP 3 cod_cliente, nom_cliente, fec_registro
+FROM PropiFacturacion_AAMM.facturacion.clientes ORDER BY cod_cliente DESC;
 GO
 
--- Simulacro de falla (ejecutar solo al final, en el orden indicado):
+-- Simulacro de falla (ejecutar solo al final, en este orden):
 --   1. PRINCIPAL:  ALTER DATABASE PropiFacturacion_AAMM SET OFFLINE WITH ROLLBACK IMMEDIATE;
 --   2. SECUNDARIA: EXEC master.dbo.pa_replica_activar;
 --   3. Backend: cambiar el puerto a 1435 y levantar con .\mvnw.cmd clean spring-boot:run
